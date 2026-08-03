@@ -1,0 +1,415 @@
+// ============================================================================
+//  Makromedia Integrated System — Prisma Schema
+//  Single source of truth untuk seluruh struktur database (PostgreSQL).
+//  Model mengikuti Class Diagram pada SDD (13 class inti + enum domain),
+//  dengan penambahan tabel operasional (project_member, project_link,
+//  payment) agar sistem berjalan utuh end-to-end.
+//
+//  Konvensi: nama tabel & kolom di database menggunakan snake_case
+//  (via @@map / @map) agar objek SQL (view/function/trigger) rapi & konsisten.
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------------
+//  ENUMERATIONS (SDD §5.1)
+// ----------------------------------------------------------------------------
+
+enum RoleUser {
+  SALES
+  PRODUKSI
+  PROJECT_MANAGER
+  FINANCE
+  DIREKTUR
+}
+
+enum StatusProyek {
+  DRAFT
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum StatusTask {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum StatusQuotation {
+  DRAFT
+  SENT
+  APPROVED
+  REJECTED
+}
+
+enum StatusInvoice {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+}
+
+enum StatusBiaya {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum KategoriProyek {
+  EVENT
+  CORPORATE_VIDEO
+  FILM_PRODUCTION
+  WEDDING
+  OTHER
+}
+
+// ----------------------------------------------------------------------------
+//  USER & ACCESS
+// ----------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @db.VarChar(120)
+  email        String   @unique @db.VarChar(160)
+  passwordHash String   @map("password_hash")
+  role         RoleUser
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  projectsCreated  Project[]         @relation("ProjectCreatedBy")
+  projectsManaged  Project[]         @relation("ProjectManager")
+  memberships      ProjectMember[]
+  tasksAssigned    Task[]
+  progressUpdates  ProjectProgress[]
+  quotations       Quotation[]
+  invoices         Invoice[]
+  productionCosts  ProductionCost[]  @relation("CostCreatedBy")
+  costApprovals    ProductionCost[]  @relation("CostApprovedBy")
+
+  @@map("users")
+}
+
+// ----------------------------------------------------------------------------
+//  CLIENT (PIC) & COMPANY
+// ----------------------------------------------------------------------------
+
+model CompanyClient {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(160)
+  email     String?  @db.VarChar(160)
+  phone     String?  @db.VarChar(30)
+  website   String?  @db.VarChar(160)
+  address   String?
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6) // soft delete
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  clients Client[]
+
+  @@map("company_clients")
+}
+
+model Client {
+  id              String   @id @default(uuid()) @db.Uuid
+  companyClientId String   @map("company_client_id") @db.Uuid
+  name            String   @db.VarChar(120) // PIC name
+  email           String?  @db.VarChar(160)
+  phone           String?  @db.VarChar(30)
+  address         String?
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(6) // soft delete
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  company  CompanyClient @relation(fields: [companyClientId], references: [id], onDelete: Restrict)
+  projects Project[]
+
+  @@index([companyClientId], map: "idx_client_company")
+  @@map("clients")
+}
+
+// ----------------------------------------------------------------------------
+//  CREW
+// ----------------------------------------------------------------------------
+
+model Crew {
+  id               String    @id @default(uuid()) @db.Uuid
+  name             String    @db.VarChar(120)
+  position         String?   @db.VarChar(80)
+  email            String?   @db.VarChar(160)
+  phone            String?   @db.VarChar(30)
+  skill            String?   @db.VarChar(160)
+  employmentStatus String?   @map("employment_status") @db.VarChar(30) // FULLTIME/PART_TIME/FREELANCE/INTERNSHIP
+  bankName         String?   @map("bank_name") @db.VarChar(80)
+  bankAccountNo    String?   @map("bank_account_no") @db.VarChar(40)
+  standardRate     Decimal?  @map("standard_rate") @db.Decimal(15, 2)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(6) // soft delete
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("crews")
+}
+
+// ----------------------------------------------------------------------------
+//  PROJECT (core entity)
+// ----------------------------------------------------------------------------
+
+model Project {
+  id               String         @id @default(uuid()) @db.Uuid
+  name             String         @map("project_name") @db.VarChar(200)
+  description      String?
+  category         KategoriProyek @default(OTHER)
+  clientId         String         @map("client_id") @db.Uuid
+  createdById      String         @map("created_by") @db.Uuid
+  projectManagerId String?        @map("project_manager_id") @db.Uuid
+  clientType       String?        @map("client_type") @db.VarChar(80)
+  partnershipModel String?        @map("partnership_model") @db.VarChar(80)
+  venue            String?        @db.VarChar(200)
+  contractValue    Decimal        @default(0) @map("contract_value") @db.Decimal(15, 2)
+  eventDate        DateTime?      @map("event_date") @db.Date
+  startDate        DateTime?      @map("start_date") @db.Date
+  endDate          DateTime?      @map("end_date") @db.Date
+  status           StatusProyek   @default(DRAFT)
+  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  client          Client            @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  createdBy       User              @relation("ProjectCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  projectManager  User?             @relation("ProjectManager", fields: [projectManagerId], references: [id], onDelete: SetNull)
+  members         ProjectMember[]
+  links           ProjectLink[]
+  tasks           Task[]
+  progress        ProjectProgress[]
+  quotations      Quotation[]
+  invoices        Invoice[]
+  productionCosts ProductionCost[]
+  payments        Payment[]
+
+  @@index([clientId], map: "idx_project_client")
+  @@index([createdById], map: "idx_project_created_by")
+  @@index([projectManagerId], map: "idx_project_manager")
+  @@index([status], map: "idx_project_status")
+  @@map("projects")
+}
+
+model ProjectMember {
+  id        String   @id @default(uuid()) @db.Uuid
+  projectId String   @map("project_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  joinedAt  DateTime @default(now()) @map("joined_at") @db.Timestamptz(6)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId], map: "uq_project_member")
+  @@index([projectId], map: "idx_member_project")
+  @@index([userId], map: "idx_member_user")
+  @@map("project_members")
+}
+
+model ProjectLink {
+  id        String   @id @default(uuid()) @db.Uuid
+  projectId String   @map("project_id") @db.Uuid
+  label     String   @db.VarChar(120)
+  url       String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId], map: "idx_link_project")
+  @@map("project_links")
+}
+
+// ----------------------------------------------------------------------------
+//  TASK & PROGRESS
+// ----------------------------------------------------------------------------
+
+model Task {
+  id           String     @id @default(uuid()) @db.Uuid
+  projectId    String     @map("project_id") @db.Uuid
+  assignedToId String?    @map("assigned_to") @db.Uuid
+  title        String     @db.VarChar(200)
+  description  String?
+  startDate    DateTime?  @map("start_date") @db.Date
+  dueDate      DateTime?  @map("due_date") @db.Date
+  progress     Int        @default(0) // 0-100 (CHECK constraint via SQL)
+  status       StatusTask @default(TODO)
+  notes        String?
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignedTo User?   @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  @@index([projectId], map: "idx_task_project")
+  @@index([assignedToId], map: "idx_task_assigned_to")
+  @@map("tasks")
+}
+
+model ProjectProgress {
+  id          String   @id @default(uuid()) @db.Uuid
+  projectId   String   @map("project_id") @db.Uuid
+  createdById String   @map("created_by") @db.Uuid
+  percentage  Decimal  @db.Decimal(5, 2) // 0-100
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([projectId], map: "idx_progress_project")
+  @@map("project_progress")
+}
+
+// ----------------------------------------------------------------------------
+//  QUOTATION
+// ----------------------------------------------------------------------------
+
+model Quotation {
+  id              String          @id @default(uuid()) @db.Uuid
+  projectId       String          @map("project_id") @db.Uuid
+  createdById     String          @map("created_by") @db.Uuid
+  quotationNumber String          @unique @map("quotation_number") @db.VarChar(60)
+  subtotal        Decimal         @default(0) @db.Decimal(15, 2)
+  discountPercent Decimal         @default(0) @map("discount_percent") @db.Decimal(5, 2)
+  taxAmount       Decimal         @default(0) @map("tax_amount") @db.Decimal(15, 2)
+  totalValue      Decimal         @default(0) @map("total_value") @db.Decimal(15, 2)
+  status          StatusQuotation @default(DRAFT)
+  notes           String?
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  project   Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User            @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  items     QuotationItem[]
+  invoices  Invoice[]
+
+  @@index([projectId], map: "idx_quotation_project")
+  @@map("quotations")
+}
+
+model QuotationItem {
+  id          String  @id @default(uuid()) @db.Uuid
+  quotationId String  @map("quotation_id") @db.Uuid
+  item        String  @db.VarChar(200)
+  description String?
+  unitPrice   Decimal @map("unit_price") @db.Decimal(15, 2)
+  quantity    Int     @default(1)
+  frequency   Int     @default(1)
+  period      String? @db.VarChar(40)
+  subTotal    Decimal @map("sub_total") @db.Decimal(15, 2)
+
+  quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@index([quotationId], map: "idx_quotation_item_quotation")
+  @@map("quotation_items")
+}
+
+// ----------------------------------------------------------------------------
+//  INVOICE
+// ----------------------------------------------------------------------------
+
+model Invoice {
+  id            String        @id @default(uuid()) @db.Uuid
+  projectId     String        @map("project_id") @db.Uuid
+  quotationId   String?       @map("quotation_id") @db.Uuid
+  createdById   String        @map("created_by") @db.Uuid
+  invoiceNumber String        @unique @map("invoice_number") @db.VarChar(60)
+  amount        Decimal       @default(0) @db.Decimal(15, 2)
+  status        StatusInvoice @default(DRAFT)
+  dueDate       DateTime?     @map("due_date") @db.Date
+  paymentInstruction String?  @map("payment_instruction")
+  notes         String?
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  quotation Quotation?    @relation(fields: [quotationId], references: [id], onDelete: SetNull)
+  createdBy User          @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  items     InvoiceItem[]
+
+  @@index([projectId], map: "idx_invoice_project")
+  @@index([quotationId], map: "idx_invoice_quotation")
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String  @id @default(uuid()) @db.Uuid
+  invoiceId   String  @map("invoice_id") @db.Uuid
+  item        String  @db.VarChar(200)
+  description String?
+  unitPrice   Decimal @map("unit_price") @db.Decimal(15, 2)
+  quantity    Int     @default(1)
+  frequency   Int     @default(1)
+  period      String? @db.VarChar(40)
+  subTotal    Decimal @map("sub_total") @db.Decimal(15, 2)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId], map: "idx_invoice_item_invoice")
+  @@map("invoice_items")
+}
+
+// ----------------------------------------------------------------------------
+//  PRODUCTION COST (with director approval workflow)
+// ----------------------------------------------------------------------------
+
+model ProductionCost {
+  id            String      @id @default(uuid()) @db.Uuid
+  projectId     String      @map("project_id") @db.Uuid
+  createdById   String      @map("created_by") @db.Uuid
+  category      String      @db.VarChar(120) // e.g. "Fee SDM Internal"
+  description   String?
+  executorName  String?     @map("executor_name") @db.VarChar(160) // nama pelaksana/toko
+  unitPrice     Decimal     @map("unit_price") @db.Decimal(15, 2)
+  quantity      Int         @default(1)
+  frequency     Int         @default(1)
+  period        String?     @db.VarChar(40)
+  amount        Decimal     @default(0) @db.Decimal(15, 2)
+  status        StatusBiaya @default(PENDING)
+  submittedAt   DateTime?   @map("submitted_at") @db.Timestamptz(6)
+  approvedById  String?     @map("approved_by") @db.Uuid
+  approvedAt    DateTime?   @map("approved_at") @db.Timestamptz(6)
+  rejectionNote String?     @map("rejection_note")
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy  User    @relation("CostCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  approvedBy User?   @relation("CostApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  @@index([projectId], map: "idx_cost_project")
+  @@index([status], map: "idx_cost_status")
+  @@map("production_costs")
+}
+
+// ----------------------------------------------------------------------------
+//  PAYMENT (payment history from client — mendukung Total Paid / Rest of Bill)
+// ----------------------------------------------------------------------------
+
+model Payment {
+  id            String   @id @default(uuid()) @db.Uuid
+  projectId     String   @map("project_id") @db.Uuid
+  amount        Decimal  @db.Decimal(15, 2)
+  paymentMethod String?  @map("payment_method") @db.VarChar(60)
+  bankTo        String?  @map("bank_to") @db.VarChar(80)
+  bankAccount   String?  @map("bank_account") @db.VarChar(60)
+  note          String?
+  paidAt        DateTime @default(now()) @map("paid_at") @db.Timestamptz(6)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId], map: "idx_payment_project")
+  @@map("payments")
+}
