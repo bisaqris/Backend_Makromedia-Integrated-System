@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 
 import configuration from './config/configuration';
@@ -26,6 +27,8 @@ import { CalendarModule } from './modules/calendar/calendar.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
+    // Rate limiting default: 100 request / 60 detik per IP.
+    ThrottlerModule.forRoot({ throttlers: [{ ttl: 60_000, limit: 100 }] }),
     PrismaModule,
     HealthModule,
     AuthModule,
@@ -44,7 +47,8 @@ import { CalendarModule } from './modules/calendar/calendar.module';
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
     { provide: APP_INTERCEPTOR, useClass: TransformInterceptor },
 
-    // 2. Guards: Autentikasi (JWT) dulu, baru otorisasi (RBAC)
+    // 2. Guards: Rate limit → Autentikasi (JWT) → Otorisasi (RBAC)
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
 
