@@ -1,10 +1,10 @@
-# Makromedia Integrated System — Backend
+# Makromedia Integrated System - Backend
 
-REST API untuk **Sistem Manajemen Proyek Terintegrasi** milik **CV. Makromedia Visual** — agensi
+REST API untuk **Sistem Manajemen Proyek Terintegrasi** milik **CV. Makromedia Visual** - agensi
 kreatif yang menangani *event*, *corporate video*, *film production*, dan *wedding*. Sistem ini
 menyatukan alur kerja end-to-end mulai dari akuisisi proyek, penawaran (quotation), penagihan
 (invoice), pencatatan biaya produksi dengan *approval workflow*, manajemen crew, hingga pemantauan
-progress — seluruhnya diproteksi dengan autentikasi JWT dan **Role-Based Access Control (RBAC)**.
+progress - seluruhnya diproteksi dengan autentikasi JWT dan **Role-Based Access Control (RBAC)**.
 
 Backend dibangun mengikuti *Software Design Document* (SDD) dengan pendekatan **database-first**,
 arsitektur **modular** ala NestJS, dan objek database native PostgreSQL (view, function, procedure,
@@ -24,7 +24,7 @@ trigger, constraint).
 5. [Sequence Diagram](#sequence-diagram)
 6. [Alur Sistem](#alur-sistem)
 7. [Model Data (ERD)](#model-data-erd)
-8. [RBAC — Matriks Hak Akses](#rbac--matriks-hak-akses)
+8. [RBAC (Matriks Hak Akses)](#rbac-matriks-hak-akses)
 9. [Referensi API / Endpoint](#referensi-api--endpoint)
 10. [Format Response & Error](#format-response--error)
 11. [Objek Database](#objek-database)
@@ -79,12 +79,12 @@ trigger, constraint).
 
 **Metodologi & prinsip yang diterapkan:**
 
-- **Database-first** — `schema.prisma` adalah *single source of truth*; objek SQL kustom
+- **Database-first** - `schema.prisma` adalah *single source of truth*; objek SQL kustom
   (view/function/procedure/trigger) diterapkan via script.
-- **Modular architecture** — tiap domain adalah *feature module* (controller → service → Prisma),
+- **Modular architecture** - tiap domain adalah *feature module* (controller → service → Prisma),
   dependency injection, dan pemisahan tanggung jawab (SoC).
 - **Cross-cutting concerns** ditangani terpusat via **Guard**, **Interceptor**, dan **Filter** global.
-- **Defense in depth** — validasi input, RBAC, rate limiting, security headers, dan fail-fast env
+- **Defense in depth** - validasi input, RBAC, rate limiting, security headers, dan fail-fast env
   validation berlapis.
 
 ```mermaid
@@ -340,13 +340,13 @@ erDiagram
 | `StatusBiaya` | `PENDING`, `APPROVED`, `REJECTED` |
 | `KategoriProyek` | `EVENT`, `CORPORATE_VIDEO`, `FILM_PRODUCTION`, `WEDDING`, `OTHER` |
 
-> Tabel operasional tambahan di luar 13 class inti: `project_members` (relasi M-N user–proyek),
+> Tabel operasional tambahan di luar 13 class inti: `project_members` (relasi M-N user-proyek),
 > `project_links` (tautan deliverable), dan `payments` (riwayat pembayaran untuk *Total Paid* /
 > *Rest of Bill*). `CalendarEvent` bersifat turunan (dibangun on-the-fly, tidak dipersistensi).
 
 ---
 
-## RBAC — Matriks Hak Akses
+## RBAC (Matriks Hak Akses)
 
 Guard global `JwtAuthGuard → RolesGuard` memproteksi seluruh endpoint kecuali yang ditandai
 `@Public()`. Tanpa `@Roles`, endpoint dapat diakses **semua role terautentikasi**.
@@ -354,19 +354,19 @@ Guard global `JwtAuthGuard → RolesGuard` memproteksi seluruh endpoint kecuali 
 | Modul / Aksi | Sales | Finance | PM | Produksi | Direktur |
 | ------------ | :---: | :-----: | :-: | :------: | :------: |
 | Lihat proyek (scoped) | ✅ | ✅ | ✅¹ | ✅¹ | ✅ |
-| Tambah proyek | ✅ | ✅ | — | — | ✅ |
-| Edit proyek | ✅ | ✅ | ✅ | — | ✅ |
-| Hapus proyek | — | ✅ | — | — | ✅ |
-| Client & Company (tambah/edit) | ✅ | ✅ | — | — | ✅ |
-| Client & Company (hapus) | — | ✅ | — | — | ✅ |
-| Crew (tambah/edit) | — | ✅ | ✅ | — | ✅ |
-| Crew (hapus) | — | ✅ | — | — | ✅ |
-| Quotation (buat) | ✅ | ✅ | — | — | ✅ |
-| Invoice (buat/status) | — | ✅ | — | — | ✅ |
-| Production Cost (buat/edit) | — | ✅ | ✅ | — | ✅ |
-| Production Cost — submit | — | — | ✅ | — | — |
-| Production Cost — approve/reject | — | — | — | — | ✅ |
-| User Management | — | — | — | — | ✅ |
+| Tambah proyek | ✅ | ✅ | - | - | ✅ |
+| Edit proyek | ✅ | ✅ | ✅ | - | ✅ |
+| Hapus proyek | - | ✅ | - | - | ✅ |
+| Client & Company (tambah/edit) | ✅ | ✅ | - | - | ✅ |
+| Client & Company (hapus) | - | ✅ | - | - | ✅ |
+| Crew (tambah/edit) | - | ✅ | ✅ | - | ✅ |
+| Crew (hapus) | - | ✅ | - | - | ✅ |
+| Quotation (buat) | ✅ | ✅ | - | - | ✅ |
+| Invoice (buat/status) | - | ✅ | - | - | ✅ |
+| Production Cost (buat/edit) | - | ✅ | ✅ | - | ✅ |
+| Production Cost - submit | - | - | ✅ | - | - |
+| Production Cost - approve/reject | - | - | - | - | ✅ |
+| User Management | - | - | - | - | ✅ |
 
 <sub>¹ PM & Produksi hanya melihat proyek yang menjadi tanggung jawabnya (data di-*scope* di service).</sub>
 
@@ -377,83 +377,83 @@ Guard global `JwtAuthGuard → RolesGuard` memproteksi seluruh endpoint kecuali 
 **Base URL:** `http://localhost:4000/api` · **Auth:** `Authorization: Bearer <accessToken>`
 (kecuali endpoint ber-tag *Public*) · **Swagger UI:** `http://localhost:4000/api/docs` (non-production).
 
-### Auth — `/auth`
+### Auth - `/auth`
 | Method | Path | Akses | Body / Query | Deskripsi |
 | ------ | ---- | ----- | ------------ | --------- |
 | `POST` | `/auth/login` | Public · *rate limit 5/menit* | `{ email, password }` | Login, mengembalikan `accessToken` + `user`. |
-| `GET` | `/auth/me` | Authenticated | — | Profil user dari token. |
+| `GET` | `/auth/me` | Authenticated | - | Profil user dari token. |
 
-### Health — `/health`
+### Health - `/health`
 | Method | Path | Akses | Deskripsi |
 | ------ | ---- | ----- | --------- |
 | `GET` | `/health` | Public | Status app, latensi DB, memori. |
 
-### Users — `/users` *(seluruh modul: Direktur)*
+### Users - `/users` *(seluruh modul: Direktur)*
 | Method | Path | Body | Deskripsi |
 | ------ | ---- | ---- | --------- |
-| `GET` | `/users` | — | Daftar user (tanpa `passwordHash`). |
+| `GET` | `/users` | - | Daftar user (tanpa `passwordHash`). |
 | `POST` | `/users` | `{ name, email, password(min 8), role }` | Buat user baru. |
 
-### Company Clients — `/company-clients`
+### Company Clients - `/company-clients`
 | Method | Path | Akses | Body |
 | ------ | ---- | ----- | ---- |
-| `GET` | `/company-clients` | Authenticated | — |
+| `GET` | `/company-clients` | Authenticated | - |
 | `POST` | `/company-clients` | Sales, Finance, Direktur | `{ name, email?, phone?, website?, address? }` |
 | `PATCH` | `/company-clients/:id` | Sales, Finance, Direktur | *(sama)* |
-| `DELETE` | `/company-clients/:id` | Finance, Direktur | — |
+| `DELETE` | `/company-clients/:id` | Finance, Direktur | - |
 
-### Clients (PIC) — `/clients`
+### Clients (PIC) - `/clients`
 | Method | Path | Akses | Body |
 | ------ | ---- | ----- | ---- |
-| `GET` | `/clients` | Authenticated | — |
+| `GET` | `/clients` | Authenticated | - |
 | `POST` | `/clients` | Sales, Finance, Direktur | `{ companyClientId, name, email?, phone?, address? }` |
 | `PATCH` | `/clients/:id` | Sales, Finance, Direktur | *(sama)* |
-| `DELETE` | `/clients/:id` | Finance, Direktur | — |
+| `DELETE` | `/clients/:id` | Finance, Direktur | - |
 
-### Crew — `/crew`
+### Crew - `/crew`
 | Method | Path | Akses | Body |
 | ------ | ---- | ----- | ---- |
-| `GET` | `/crew` | Authenticated | — |
+| `GET` | `/crew` | Authenticated | - |
 | `POST` | `/crew` | PM, Finance, Direktur | `{ name, position?, email?, phone?, skill?, employmentStatus?, bankName?, bankAccountNo?, standardRate? }` |
 | `PATCH` | `/crew/:id` | PM, Finance, Direktur | *(sama)* |
-| `DELETE` | `/crew/:id` | Finance, Direktur | — |
+| `DELETE` | `/crew/:id` | Finance, Direktur | - |
 
-### Projects — `/projects`
+### Projects - `/projects`
 | Method | Path | Akses | Body / Query |
 | ------ | ---- | ----- | ------------ |
 | `GET` | `/projects` | Authenticated *(scoped)* | Query: `search?`, `category?`, `status?` |
-| `GET` | `/projects/:id` | Authenticated *(scoped)* | — |
+| `GET` | `/projects/:id` | Authenticated *(scoped)* | - |
 | `POST` | `/projects` | Sales, Finance, Direktur | `{ name, category, clientId, projectManagerId?, contractValue?, eventDate?, startDate?, endDate?, ... }` |
 | `PATCH` | `/projects/:id` | Sales, Finance, Direktur, PM | *(partial)* |
-| `DELETE` | `/projects/:id` | Finance, Direktur | — |
+| `DELETE` | `/projects/:id` | Finance, Direktur | - |
 
-### Quotations — `/quotations`
+### Quotations - `/quotations`
 | Method | Path | Akses | Body |
 | ------ | ---- | ----- | ---- |
-| `GET` | `/quotations/project/:projectId` | Authenticated | — |
-| `GET` | `/quotations/:id` | Authenticated | — |
+| `GET` | `/quotations/project/:projectId` | Authenticated | - |
+| `GET` | `/quotations/:id` | Authenticated | - |
 | `POST` | `/quotations` | Sales, Finance, Direktur | `{ projectId, quotationNumber, discountPercent?, taxAmount?, notes?, items: [{ item, unitPrice, quantity, frequency?, period? }] }` |
 
-### Invoices — `/invoices`
+### Invoices - `/invoices`
 | Method | Path | Akses | Body |
 | ------ | ---- | ----- | ---- |
-| `GET` | `/invoices/project/:projectId` | Authenticated | — |
+| `GET` | `/invoices/project/:projectId` | Authenticated | - |
 | `POST` | `/invoices` | Finance, Direktur | `{ projectId, quotationId?, invoiceNumber, dueDate?, paymentInstruction?, items: [...] }` |
 | `PATCH` | `/invoices/:id/status` | Finance, Direktur | `{ status: DRAFT\|SENT\|PAID\|OVERDUE }` |
 
-### Production Costs — `/production-costs`
+### Production Costs - `/production-costs`
 | Method | Path | Akses | Body / Query |
 | ------ | ---- | ----- | ------------ |
 | `GET` | `/production-costs/applications` | Direktur | Query: `status?` |
-| `GET` | `/production-costs/project/:projectId` | Authenticated | — |
+| `GET` | `/production-costs/project/:projectId` | Authenticated | - |
 | `POST` | `/production-costs` | PM, Finance, Direktur | `{ projectId, category, unitPrice, quantity?, frequency?, executorName?, ... }` |
 | `PATCH` | `/production-costs/:id` | PM, Finance, Direktur | *(partial)* |
-| `PATCH` | `/production-costs/:id/submit` | PM | — |
-| `PATCH` | `/production-costs/:id/approve` | Direktur | — |
+| `PATCH` | `/production-costs/:id/submit` | PM | - |
+| `PATCH` | `/production-costs/:id/approve` | Direktur | - |
 | `PATCH` | `/production-costs/:id/reject` | Direktur | `{ rejectionNote }` |
-| `DELETE` | `/production-costs/:id` | PM, Finance, Direktur | — |
+| `DELETE` | `/production-costs/:id` | PM, Finance, Direktur | - |
 
-### Calendar — `/calendar`
+### Calendar - `/calendar`
 | Method | Path | Akses | Deskripsi |
 | ------ | ---- | ----- | --------- |
 | `GET` | `/calendar/events` | Authenticated | Event proyek (turunan, di-*scope* per user). |
@@ -500,30 +500,30 @@ Guard global `JwtAuthGuard → RolesGuard` memproteksi seluruh endpoint kecuali 
 
 Diterapkan via `pnpm db:objects` (`prisma/apply-sql-objects.ts`) setelah skema dibuat:
 
-- **Views** — `vw_project_detail`, `vw_task_monitoring`, `vw_production_cost_summary`.
-- **Functions** — `fn_total_production_cost(project_id)` (total biaya `APPROVED`),
+- **Views** - `vw_project_detail`, `vw_task_monitoring`, `vw_production_cost_summary`.
+- **Functions** - `fn_total_production_cost(project_id)` (total biaya `APPROVED`),
   `fn_project_progress(project_id)` (rata-rata progress task).
-- **Procedures** — `sp_add_project_member(project_id, user_id)`,
+- **Procedures** - `sp_add_project_member(project_id, user_id)`,
   `sp_create_invoice(project_id, quotation_id, created_by, invoice_number, amount, due_date)`.
-- **Triggers** — auto `updated_at`, auto `sub_total` (item quotation/invoice), auto `amount`
+- **Triggers** - auto `updated_at`, auto `sub_total` (item quotation/invoice), auto `amount`
   (production cost = `unit_price × quantity × frequency`).
-- **Constraints** — `CHECK` progress task 0–100.
+- **Constraints** - `CHECK` progress task 0-100.
 
 ---
 
 ## Keamanan (Security Hardening)
 
-- **Fail-fast env validation** (`validateEnv`) — aplikasi menolak start bila `DATABASE_URL`/
+- **Fail-fast env validation** (`validateEnv`) - aplikasi menolak start bila `DATABASE_URL`/
   `JWT_SECRET` kosong, terlalu pendek (< 16 karakter), atau masih placeholder (fatal di production).
-- **JWT** — Bearer token, tanpa *secret* default yang tidak aman.
-- **RBAC berlapis** — `JwtAuthGuard` → `RolesGuard` global.
-- **Rate limiting** (`@nestjs/throttler`) — global **100 request/60 detik**, login **5/60 detik** per IP.
-- **helmet** — security headers (CSP aktif di production).
-- **CORS whitelist** — hanya origin dari `FRONTEND_URL` (tanpa fallback wildcard).
-- **Password** — bcrypt cost factor **12**; `passwordHash` tak pernah dikembalikan ke klien.
-- **ValidationPipe global** — `whitelist` + `forbidNonWhitelisted` + `transform`.
+- **JWT** - Bearer token, tanpa *secret* default yang tidak aman.
+- **RBAC berlapis** - `JwtAuthGuard` → `RolesGuard` global.
+- **Rate limiting** (`@nestjs/throttler`) - global **100 request/60 detik**, login **5/60 detik** per IP.
+- **helmet** - security headers (CSP aktif di production).
+- **CORS whitelist** - hanya origin dari `FRONTEND_URL` (tanpa fallback wildcard).
+- **Password** - bcrypt cost factor **12**; `passwordHash` tak pernah dikembalikan ke klien.
+- **ValidationPipe global** - `whitelist` + `forbidNonWhitelisted` + `transform`.
 - **Swagger** dimatikan di production; **compression** & **graceful shutdown hooks** aktif.
-- **Dependency** — 0 kerentanan (`pnpm audit`), override keamanan di `pnpm-workspace.yaml`.
+- **Dependency** - 0 kerentanan (`pnpm audit`), override keamanan di `pnpm-workspace.yaml`.
 
 ---
 
@@ -586,12 +586,12 @@ pnpm start:dev
 
 | Variabel | Wajib | Default | Keterangan |
 | -------- | :---: | ------- | ---------- |
-| `DATABASE_URL` | ✅ | — | Koneksi PostgreSQL (Prisma). |
-| `JWT_SECRET` | ✅ | — | Min. 16 karakter, bukan placeholder. |
-| `JWT_EXPIRES_IN` | — | `1d` | Masa berlaku token. |
-| `PORT` | — | `4000` | Port HTTP. |
-| `NODE_ENV` | — | `development` | `production` mengaktifkan mode ketat. |
-| `FRONTEND_URL` | — | `http://localhost:3000` | Whitelist CORS (comma-separated). |
+| `DATABASE_URL` | ✅ | - | Koneksi PostgreSQL (Prisma). |
+| `JWT_SECRET` | ✅ | - | Min. 16 karakter, bukan placeholder. |
+| `JWT_EXPIRES_IN` | - | `1d` | Masa berlaku token. |
+| `PORT` | - | `4000` | Port HTTP. |
+| `NODE_ENV` | - | `development` | `production` mengaktifkan mode ketat. |
+| `FRONTEND_URL` | - | `http://localhost:3000` | Whitelist CORS (comma-separated). |
 
 ---
 
