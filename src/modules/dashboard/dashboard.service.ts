@@ -17,13 +17,13 @@ export class DashboardService {
         _sum: { amount: true },
       }),
     ]);
-    const totalContractValue = Number(projectAgg._sum.contractValue ?? 0);
-    const totalPaid = Number(paidAgg._sum.amount ?? 0);
-    const approvedProductionCost = Number(costAgg._sum.amount ?? 0);
+    const totalContractValue = projectAgg._sum.contractValue ?? new Prisma.Decimal(0);
+    const totalPaid = paidAgg._sum.amount ?? new Prisma.Decimal(0);
+    const approvedProductionCost = costAgg._sum.amount ?? new Prisma.Decimal(0);
     return {
       totalContractValue,
       totalPaid,
-      restOfBill: totalContractValue - totalPaid,
+      restOfBill: totalContractValue.sub(totalPaid),
       approvedProductionCost,
     };
   }

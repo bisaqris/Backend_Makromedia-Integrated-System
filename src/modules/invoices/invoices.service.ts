@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { StatusInvoice } from '@prisma/client';
+import { Prisma, StatusInvoice } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
 import { CreateInvoiceDto } from './dto/invoice.dto';
@@ -27,9 +27,9 @@ export class InvoicesService {
   create(dto: CreateInvoiceDto, user: AuthUser) {
     const items = dto.items.map((i) => ({
       ...i, frequency: i.frequency ?? 1,
-      subTotal: i.unitPrice * i.quantity * (i.frequency ?? 1),
+      subTotal: new Prisma.Decimal(i.unitPrice).mul(i.quantity).mul(i.frequency ?? 1),
     }));
-    const amount = items.reduce((s, i) => s + i.subTotal, 0);
+    const amount = items.reduce((sum, i) => sum.add(i.subTotal), new Prisma.Decimal(0));
     return this.prisma.invoice.create({
       data: {
         projectId: dto.projectId, quotationId: dto.quotationId, createdById: user.id,

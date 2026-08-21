@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/payment.dto';
 
@@ -32,11 +33,11 @@ export class PaymentsService {
       where: { projectId },
       _sum: { amount: true },
     });
-    const totalPaid = Number(agg._sum.amount ?? 0);
-    const contractValue = Number(project.contractValue);
+    const totalPaid = agg._sum.amount ?? new Prisma.Decimal(0);
+    const contractValue = project.contractValue;
     return {
       payments,
-      summary: { contractValue, totalPaid, restOfBill: contractValue - totalPaid },
+      summary: { contractValue, totalPaid, restOfBill: contractValue.sub(totalPaid) },
     };
   }
 
