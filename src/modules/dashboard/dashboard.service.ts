@@ -30,17 +30,16 @@ export class DashboardService {
 
   /** Jumlah proyek per kategori & status, di-scope sesuai role (PM/Produksi terbatas). */
   async projectCounts(user: AuthUser) {
-    const projects = await this.prisma.project.findMany({
-      where: this.scopeByRole(user),
-      select: { category: true, status: true },
-    });
-    const byCategory: Record<string, number> = {};
-    const byStatus: Record<string, number> = {};
-    for (const p of projects) {
-      byCategory[p.category] = (byCategory[p.category] ?? 0) + 1;
-      byStatus[p.status] = (byStatus[p.status] ?? 0) + 1;
-    }
-    return { total: projects.length, byCategory, byStatus };
+    const where = this.scopeByRole(user);
+    // Agregasi dilakukan di database (groupBy + count), bukan fetch semua row lalu reduce.
+    const [byCategoryRows, byStatusRows, total] = await Promise.all([
+      this.prisma.project.groupBy({ by: ['category'], where, _count: true }),
+      this.prisma.project.groupBy({ by: ['status'], where, _count: true }),
+      this.prisma.project.count({ where }),
+    ]);
+    const byCategory = Object.fromEntries(byCategoryRows.map((r) => [r.category, r._count]));
+    const byStatus = Object.fromEntries(byStatusRows.map((r) => [r.status, r._count]));
+    return { total, byCategory, byStatus };
   }
 
   private scopeByRole(user: AuthUser): Prisma.ProjectWhereInput {

@@ -52,34 +52,28 @@ export class TasksService {
    */
   async updateProgress(id: string, progress: number, user: AuthUser) {
     const task = await this.get(id);
+    const status =
+      progress === 0 ? StatusTask.TODO : progress >= 100 ? StatusTask.DONE : StatusTask.IN_PROGRESS;
 
-    const updated = await this.prisma.task.update({
-      where: { id },
-      data: {
-        progress,
-        status:
-          progress === 0
-            ? StatusTask.TODO
-            : progress >= 100
-              ? StatusTask.DONE
-              : StatusTask.IN_PROGRESS,
-      },
-    });
+    // Update task + snapshot progress proyek dilakukan atomik (satu transaksi).
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.task.update({ where: { id }, data: { progress, status } });
 
-    const agg = await this.prisma.task.aggregate({
-      where: { projectId: task.projectId },
-      _avg: { progress: true },
-    });
-    await this.prisma.projectProgress.create({
-      data: {
-        projectId: task.projectId,
-        createdById: user.id,
-        percentage: agg._avg.progress ?? 0,
-        notes: `Update progress task "${task.title}" menjadi ${progress}%`,
-      },
-    });
+      const agg = await tx.task.aggregate({
+        where: { projectId: task.projectId },
+        _avg: { progress: true },
+      });
+      await tx.projectProgress.create({
+        data: {
+          projectId: task.projectId,
+          createdById: user.id,
+          percentage: agg._avg.progress ?? 0,
+          notes: `Update progress task "${task.title}" menjadi ${progress}%`,
+        },
+      });
 
-    return updated;
+      return updated;
+    });
   }
 
   async remove(id: string) {
