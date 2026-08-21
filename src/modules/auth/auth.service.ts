@@ -21,7 +21,9 @@ export class AuthService {
     }
     if (!user.isActive) throw new UnauthorizedException('Akun tidak aktif.');
 
-    const token = await this.jwt.signAsync({ sub: user.id, email: user.email, role: user.role });
+    const token = await this.jwt.signAsync({
+      sub: user.id, email: user.email, role: user.role, tv: user.tokenVersion,
+    });
     return {
       accessToken: token,
       user: { id: user.id, name: user.name, email: user.email, role: user.role },
@@ -52,7 +54,11 @@ export class AuthService {
       throw new BadRequestException('Password lama tidak sesuai.');
     }
     const passwordHash = await bcrypt.hash(dto.newPassword, BCRYPT_ROUNDS);
-    await this.prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+    // Naikkan tokenVersion agar seluruh token lama (JWT sebelum ganti password) invalid.
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash, tokenVersion: { increment: 1 } },
+    });
     return { message: 'Password berhasil diperbarui.' };
   }
 }

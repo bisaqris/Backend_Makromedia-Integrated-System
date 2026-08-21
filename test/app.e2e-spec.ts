@@ -43,4 +43,17 @@ describe('Auth & RBAC (e2e)', () => {
       .get('/api/users')
       .set('Authorization', `Bearer ${salesToken}`)
       .expect(403));
+
+  it('Produksi -> 403 saat mengakses endpoint finansial (RBAC)', async () => {
+    const login = await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send({ email: 'produksi@makromedia.id', password: 'Password123!' })
+      .expect(200);
+    const token = login.body.data.accessToken;
+    const anyUuid = '00000000-0000-0000-0000-000000000000';
+    await request(app.getHttpServer())
+      .get(`/api/quotations/project/${anyUuid}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(403);
+  });
 });

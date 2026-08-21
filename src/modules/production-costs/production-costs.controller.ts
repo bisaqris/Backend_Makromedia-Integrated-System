@@ -16,7 +16,7 @@ import {
 export class ProductionCostsController {
   constructor(private costs: ProductionCostsService) {}
 
-  // Daftar pengajuan untuk Approval Cost (Direktur) — SDD UC09
+  // Daftar pengajuan untuk Approval Cost (Direktur) - SDD UC09
   @Get('applications')
   @Roles('DIREKTUR')
   applications(@Query('status') status?: StatusBiaya) {
@@ -25,8 +25,8 @@ export class ProductionCostsController {
 
   @Get('project/:projectId')
   @Roles('SALES', 'FINANCE', 'PROJECT_MANAGER', 'DIREKTUR')
-  byProject(@Param('projectId', ParseUUIDPipe) projectId: string) {
-    return this.costs.findByProject(projectId);
+  byProject(@Param('projectId', ParseUUIDPipe) projectId: string, @CurrentUser() user: AuthUser) {
+    return this.costs.findByProject(projectId, user);
   }
 
   @Post()
@@ -37,14 +37,18 @@ export class ProductionCostsController {
 
   @Patch(':id')
   @Roles('PROJECT_MANAGER', 'FINANCE', 'DIREKTUR')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateProductionCostDto) {
-    return this.costs.update(id, dto);
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateProductionCostDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.costs.update(id, dto, user);
   }
 
   @Patch(':id/submit')
   @Roles('PROJECT_MANAGER')
-  submit(@Param('id', ParseUUIDPipe) id: string) {
-    return this.costs.submit(id);
+  submit(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
+    return this.costs.submit(id, user);
   }
 
   @Patch(':id/approve')
@@ -65,7 +69,7 @@ export class ProductionCostsController {
 
   @Delete(':id')
   @Roles('PROJECT_MANAGER', 'FINANCE', 'DIREKTUR')
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.costs.remove(id);
+  remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
+    return this.costs.remove(id, user);
   }
 }

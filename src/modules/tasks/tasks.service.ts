@@ -2,14 +2,18 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { StatusTask } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
+import { ProjectAccessService } from '../../common/services/project-access.service';
 import { CreateTaskDto, UpdateTaskDto } from './dto/task.dto';
 
 @Injectable()
 export class TasksService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private access: ProjectAccessService,
+  ) {}
 
-  async findByProject(projectId: string) {
-    await this.ensureProject(projectId);
+  async findByProject(projectId: string, user: AuthUser) {
+    await this.access.assertCanAccess(projectId, user);
     return this.prisma.task.findMany({
       where: { projectId },
       include: { assignedTo: { select: { id: true, name: true, role: true } } },
@@ -17,8 +21,8 @@ export class TasksService {
     });
   }
 
-  async create(projectId: string, dto: CreateTaskDto) {
-    await this.ensureProject(projectId);
+  async create(projectId: string, dto: CreateTaskDto, user: AuthUser) {
+    await this.access.assertCanAccess(projectId, user);
     return this.prisma.task.create({
       data: {
         projectId,
@@ -34,8 +38,9 @@ export class TasksService {
     });
   }
 
-  async update(id: string, dto: UpdateTaskDto) {
-    await this.get(id);
+  async update(id: string, dto: UpdateTaskDto, user: AuthUser) {
+    const task = await this.get(id);
+    await this.access.assertCanAccess(task.projectId, user);
     return this.prisma.task.update({
       where: { id },
       data: {
@@ -52,6 +57,7 @@ export class TasksService {
    */
   async updateProgress(id: string, progress: number, user: AuthUser) {
     const task = await this.get(id);
+    await this.access.assertCanAccess(task.projectId, user);
     const status =
       progress === 0 ? StatusTask.TODO : progress >= 100 ? StatusTask.DONE : StatusTask.IN_PROGRESS;
 
@@ -76,8 +82,9 @@ export class TasksService {
     });
   }
 
-  async remove(id: string) {
-    await this.get(id);
+  async remove(id: string, user: AuthUser) {
+    const task = await this.get(id);
+    await this.access.assertCanAccess(task.projectId, user);
     return this.prisma.task.delete({ where: { id } });
   }
 
@@ -85,13 +92,5 @@ export class TasksService {
     const task = await this.prisma.task.findUnique({ where: { id } });
     if (!task) throw new NotFoundException('Task tidak ditemukan.');
     return task;
-  }
-
-  private async ensureProject(projectId: string) {
-    const project = await this.prisma.project.findUnique({
-      where: { id: projectId },
-      select: { id: true },
-    });
-    if (!project) throw new NotFoundException('Proyek tidak ditemukan.');
   }
 }
