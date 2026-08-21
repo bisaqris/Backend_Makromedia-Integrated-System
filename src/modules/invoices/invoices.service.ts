@@ -14,6 +14,16 @@ export class InvoicesService {
     });
   }
 
+  /** Detail satu invoice + items (untuk halaman detail/preview). */
+  async findOne(id: string) {
+    const invoice = await this.prisma.invoice.findUnique({
+      where: { id },
+      include: { items: true, quotation: { select: { id: true, quotationNumber: true } } },
+    });
+    if (!invoice) throw new NotFoundException('Invoice tidak ditemukan.');
+    return invoice;
+  }
+
   create(dto: CreateInvoiceDto, user: AuthUser) {
     const items = dto.items.map((i) => ({
       ...i, frequency: i.frequency ?? 1,

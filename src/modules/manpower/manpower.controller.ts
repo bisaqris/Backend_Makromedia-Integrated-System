@@ -15,6 +15,11 @@ export class ManpowerController {
     return this.svc.findAll();
   }
 
+  @Get(':id')
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.svc.findOne(id);
+  }
+
   @Post()
   @Roles('PROJECT_MANAGER', 'FINANCE', 'DIREKTUR')
   create(@Body() dto: UpsertManpowerDto) {
