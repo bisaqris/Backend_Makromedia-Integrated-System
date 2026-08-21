@@ -24,6 +24,7 @@ export class ProductionCostsController {
   }
 
   @Get('project/:projectId')
+  @Roles('SALES', 'FINANCE', 'PROJECT_MANAGER', 'DIREKTUR')
   byProject(@Param('projectId', ParseUUIDPipe) projectId: string) {
     return this.costs.findByProject(projectId);
   }

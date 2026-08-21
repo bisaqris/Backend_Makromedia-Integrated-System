@@ -10,8 +10,10 @@ import { CreateQuotationDto, UpdateQuotationStatusDto } from './dto/quotation.dt
 @Controller('quotations')
 export class QuotationsController {
   constructor(private svc: QuotationsService) {}
-  @Get('project/:projectId') byProject(@Param('projectId', ParseUUIDPipe) id: string) { return this.svc.findByProject(id); }
-  @Get(':id') findOne(@Param('id', ParseUUIDPipe) id: string) { return this.svc.findOne(id); }
+  @Get('project/:projectId') @Roles('SALES', 'FINANCE', 'DIREKTUR')
+  byProject(@Param('projectId', ParseUUIDPipe) id: string) { return this.svc.findByProject(id); }
+  @Get(':id') @Roles('SALES', 'FINANCE', 'DIREKTUR')
+  findOne(@Param('id', ParseUUIDPipe) id: string) { return this.svc.findOne(id); }
   @Post() @Roles('SALES', 'FINANCE', 'DIREKTUR')
   create(@Body() dto: CreateQuotationDto, @CurrentUser() user: AuthUser) { return this.svc.create(dto, user); }
 

@@ -11,6 +11,7 @@ export class PaymentsController {
   constructor(private payments: PaymentsService) {}
 
   @Get()
+  @Roles('SALES', 'FINANCE', 'DIREKTUR')
   byProject(@Param('projectId', ParseUUIDPipe) projectId: string) {
     return this.payments.findByProject(projectId);
   }
