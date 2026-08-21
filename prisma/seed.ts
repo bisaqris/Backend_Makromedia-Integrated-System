@@ -41,7 +41,7 @@ async function main() {
   await prisma.projectMember.deleteMany();
   await prisma.projectProgress.deleteMany();
   await prisma.project.deleteMany();
-  await prisma.crew.deleteMany();
+  await prisma.manpower.deleteMany();
   await prisma.client.deleteMany();
   await prisma.companyClient.deleteMany();
 
@@ -64,8 +64,8 @@ async function main() {
     },
   });
 
-  // ---- Crew ------------------------------------------------------------
-  await prisma.crew.createMany({
+  // ---- Manpower --------------------------------------------------------
+  await prisma.manpower.createMany({
     data: [
       { name: 'Andy Setiawan', position: 'Senior Videographer', skill: 'Videography, Color Grading', employmentStatus: 'FULLTIME', standardRate: '300000' },
       { name: 'Krismanegara', position: 'Cameraman', skill: 'Cinematography', employmentStatus: 'FREELANCE', standardRate: '100000' },

@@ -1,14 +1,14 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { CrewService } from './crew.service';
-import { UpsertCrewDto } from './dto/crew.dto';
+import { ManpowerService } from './manpower.service';
+import { UpsertManpowerDto } from './dto/manpower.dto';
 
-@ApiTags('crew')
+@ApiTags('manpower')
 @ApiBearerAuth()
-@Controller('crew')
-export class CrewController {
-  constructor(private svc: CrewService) {}
+@Controller('manpower')
+export class ManpowerController {
+  constructor(private svc: ManpowerService) {}
 
   @Get()
   findAll() {
@@ -17,13 +17,13 @@ export class CrewController {
 
   @Post()
   @Roles('PROJECT_MANAGER', 'FINANCE', 'DIREKTUR')
-  create(@Body() dto: UpsertCrewDto) {
+  create(@Body() dto: UpsertManpowerDto) {
     return this.svc.create(dto);
   }
 
   @Patch(':id')
   @Roles('PROJECT_MANAGER', 'FINANCE', 'DIREKTUR')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpsertCrewDto) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpsertManpowerDto) {
     return this.svc.update(id, dto);
   }
 
