@@ -20,6 +20,7 @@ import { CompanyClientsModule } from './modules/company-clients/company-clients.
 import { ClientsModule } from './modules/clients/clients.module';
 import { ManpowerModule } from './modules/manpower/manpower.module';
 import { ProjectsModule } from './modules/projects/projects.module';
+import { TasksModule } from './modules/tasks/tasks.module';
 import { QuotationsModule } from './modules/quotations/quotations.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { ProductionCostsModule } from './modules/production-costs/production-costs.module';
@@ -38,6 +39,7 @@ import { CalendarModule } from './modules/calendar/calendar.module';
     ClientsModule,
     ManpowerModule,
     ProjectsModule,
+    TasksModule,
     QuotationsModule,
     InvoicesModule,
     ProductionCostsModule,
