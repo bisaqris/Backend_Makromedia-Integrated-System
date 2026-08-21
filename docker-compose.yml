@@ -17,5 +17,30 @@ services:
       timeout: 5s
       retries: 5
 
+  api:
+    build:
+      context: .
+    container_name: makromedia_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Di dalam network compose, host DB = nama service `postgres` (port container 5432).
+      DATABASE_URL: postgresql://makromedia:makromedia@postgres:5432/makromedia_db?schema=public
+      NODE_ENV: development
+      PORT: 4000
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me-please-32chars}
+      JWT_EXPIRES_IN: 1d
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - '4000:4000'
+    # Saat start: sinkronkan skema, terapkan objek SQL, seed, lalu jalankan API.
+    command: >
+      sh -c "pnpm prisma db push --accept-data-loss &&
+             pnpm db:objects &&
+             pnpm db:seed &&
+             node dist/main.js"
+
 volumes:
   makromedia_pgdata:
