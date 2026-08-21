@@ -1,6 +1,6 @@
 import { IsEmail, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
-export class UpsertCrewDto {
+export class UpsertManpowerDto {
   @IsString()
   name: string;
 

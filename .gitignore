@@ -39,3 +39,7 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Markdown (hanya README.md yang di-track)
+*.md
+!README.md
