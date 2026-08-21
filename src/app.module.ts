@@ -18,7 +18,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { CompanyClientsModule } from './modules/company-clients/company-clients.module';
 import { ClientsModule } from './modules/clients/clients.module';
-import { CrewModule } from './modules/crew/crew.module';
+import { ManpowerModule } from './modules/manpower/manpower.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { QuotationsModule } from './modules/quotations/quotations.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
@@ -36,7 +36,7 @@ import { CalendarModule } from './modules/calendar/calendar.module';
     UsersModule,
     CompanyClientsModule,
     ClientsModule,
-    CrewModule,
+    ManpowerModule,
     ProjectsModule,
     QuotationsModule,
     InvoicesModule,

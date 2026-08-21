@@ -139,10 +139,10 @@ model Client {
 }
 
 // ----------------------------------------------------------------------------
-//  CREW
+//  MANPOWER
 // ----------------------------------------------------------------------------
 
-model Crew {
+model Manpower {
   id               String    @id @default(uuid()) @db.Uuid
   name             String    @db.VarChar(120)
   position         String?   @db.VarChar(80)
@@ -157,7 +157,7 @@ model Crew {
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  @@map("crews")
+  @@map("manpower")
 }
 
 // ----------------------------------------------------------------------------

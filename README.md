@@ -3,7 +3,7 @@
 REST API untuk **Sistem Manajemen Proyek Terintegrasi** milik **CV. Makromedia Visual** - agensi
 kreatif yang menangani *event*, *corporate video*, *film production*, dan *wedding*. Sistem ini
 menyatukan alur kerja end-to-end mulai dari akuisisi proyek, penawaran (quotation), penagihan
-(invoice), pencatatan biaya produksi dengan *approval workflow*, manajemen crew, hingga pemantauan
+(invoice), pencatatan biaya produksi dengan *approval workflow*, manajemen manpower, hingga pemantauan
 progress - seluruhnya diproteksi dengan autentikasi JWT dan **Role-Based Access Control (RBAC)**.
 
 Backend dibangun mengikuti *Software Design Document* (SDD) dengan pendekatan **database-first**,
@@ -45,7 +45,7 @@ trigger, constraint).
 | **Autentikasi** | Login email + password, JWT Bearer, endpoint `me`, guard global + rate limiting anti brute-force. |
 | **User Management** | CRUD user & assignment role (khusus Direktur). |
 | **Client Data** | Data perusahaan klien (Company Client) & PIC (Client), soft-delete. |
-| **Crew** | Data tenaga kerja/kru produksi beserta skill, rate, dan info bank. |
+| **Manpower** | Data tenaga kerja/kru produksi beserta skill, rate, dan info bank. |
 | **Project** | CRUD proyek, kategori, kontrak, timeline, PM assignment, scoping data per role. |
 | **Quotation** | Penawaran multi-item dengan diskon & pajak, auto-kalkulasi subtotal & total. |
 | **Invoice** | Penagihan multi-item, dapat diturunkan dari quotation, update status pembayaran. |
@@ -131,7 +131,7 @@ flowchart LR
         UC1(["Login / Autentikasi"])
         UC2(["Kelola Proyek"])
         UC3(["Kelola Client & Company"])
-        UC4(["Kelola Crew"])
+        UC4(["Kelola Manpower"])
         UC5(["Buat Quotation"])
         UC6(["Buat & Update Invoice"])
         UC7(["Ajukan Production Cost"])
@@ -245,7 +245,7 @@ flowchart TD
     C --> D{Quotation disetujui?}
     D -- Ya --> E[Terbitkan Invoice]
     E --> F[Update status Invoice: SENT → PAID / OVERDUE]
-    B --> G[PM & Crew kerjakan Task]
+    B --> G[PM & Manpower kerjakan Task]
     G --> H[Update progress Task]
     B --> I[Catat Production Cost - PENDING]
     I --> J[PM submit ke Direktur]
@@ -282,7 +282,7 @@ erDiagram
     Quotation ||--o{ QuotationItem : ""
     Quotation ||--o{ Invoice : "diturunkan menjadi"
     Invoice ||--o{ InvoiceItem : ""
-    Crew {
+    Manpower {
         uuid id
         string name
         string position
@@ -359,8 +359,8 @@ Guard global `JwtAuthGuard → RolesGuard` memproteksi seluruh endpoint kecuali 
 | Hapus proyek | - | ✅ | - | - | ✅ |
 | Client & Company (tambah/edit) | ✅ | ✅ | - | - | ✅ |
 | Client & Company (hapus) | - | ✅ | - | - | ✅ |
-| Crew (tambah/edit) | - | ✅ | ✅ | - | ✅ |
-| Crew (hapus) | - | ✅ | - | - | ✅ |
+| Manpower (tambah/edit) | - | ✅ | ✅ | - | ✅ |
+| Manpower (hapus) | - | ✅ | - | - | ✅ |
 | Quotation (buat) | ✅ | ✅ | - | - | ✅ |
 | Invoice (buat/status) | - | ✅ | - | - | ✅ |
 | Production Cost (buat/edit) | - | ✅ | ✅ | - | ✅ |
@@ -410,13 +410,13 @@ Guard global `JwtAuthGuard → RolesGuard` memproteksi seluruh endpoint kecuali 
 | `PATCH` | `/clients/:id` | Sales, Finance, Direktur | *(sama)* |
 | `DELETE` | `/clients/:id` | Finance, Direktur | - |
 
-### Crew - `/crew`
+### Manpower - `/manpower`
 | Method | Path | Akses | Body |
 | ------ | ---- | ----- | ---- |
-| `GET` | `/crew` | Authenticated | - |
-| `POST` | `/crew` | PM, Finance, Direktur | `{ name, position?, email?, phone?, skill?, employmentStatus?, bankName?, bankAccountNo?, standardRate? }` |
-| `PATCH` | `/crew/:id` | PM, Finance, Direktur | *(sama)* |
-| `DELETE` | `/crew/:id` | Finance, Direktur | - |
+| `GET` | `/manpower` | Authenticated | - |
+| `POST` | `/manpower` | PM, Finance, Direktur | `{ name, position?, email?, phone?, skill?, employmentStatus?, bankName?, bankAccountNo?, standardRate? }` |
+| `PATCH` | `/manpower/:id` | PM, Finance, Direktur | *(sama)* |
+| `DELETE` | `/manpower/:id` | Finance, Direktur | - |
 
 ### Projects - `/projects`
 | Method | Path | Akses | Body / Query |
@@ -542,7 +542,7 @@ Backend_Makromedia-Integrated-System/
 │   ├── health/                 # health check
 │   ├── prisma/                 # PrismaService (global)
 │   ├── modules/                # auth · users · projects · clients · company-clients
-│   │                           # crew · quotations · invoices · production-costs · calendar
+│   │                           # manpower · quotations · invoices · production-costs · calendar
 │   ├── app.module.ts
 │   └── main.ts                 # bootstrap (helmet, cors, swagger, throttler)
 ├── docker-compose.yml          # PostgreSQL 16
