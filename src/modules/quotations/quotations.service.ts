@@ -1,7 +1,7 @@
 import {
   BadRequestException, ForbiddenException, Injectable, NotFoundException,
 } from '@nestjs/common';
-import { StatusQuotation } from '@prisma/client';
+import { Prisma, StatusQuotation } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
 import { CreateQuotationDto } from './dto/quotation.dto';
@@ -25,11 +25,11 @@ export class QuotationsService {
   create(dto: CreateQuotationDto, user: AuthUser) {
     const items = dto.items.map((i) => ({
       ...i, frequency: i.frequency ?? 1,
-      subTotal: i.unitPrice * i.quantity * (i.frequency ?? 1),
+      subTotal: new Prisma.Decimal(i.unitPrice).mul(i.quantity).mul(i.frequency ?? 1),
     }));
-    const subtotal = items.reduce((s, i) => s + i.subTotal, 0);
-    const discount = subtotal * ((dto.discountPercent ?? 0) / 100);
-    const total = subtotal - discount + (dto.taxAmount ?? 0);
+    const subtotal = items.reduce((sum, i) => sum.add(i.subTotal), new Prisma.Decimal(0));
+    const discount = subtotal.mul(new Prisma.Decimal(dto.discountPercent ?? 0).div(100));
+    const total = subtotal.sub(discount).add(dto.taxAmount ?? 0);
 
     return this.prisma.quotation.create({
       data: {

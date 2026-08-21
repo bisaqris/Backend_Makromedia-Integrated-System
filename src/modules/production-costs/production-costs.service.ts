@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { StatusBiaya } from '@prisma/client';
+import { Prisma, StatusBiaya } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
 import { ProjectAccessService } from '../../common/services/project-access.service';
@@ -38,7 +38,7 @@ export class ProductionCostsService {
   async create(dto: CreateProductionCostDto, user: AuthUser) {
     await this.access.assertCanAccess(dto.projectId, user);
     // amount dihitung otomatis oleh trigger DB; diset juga di sini untuk konsistensi.
-    const amount = dto.unitPrice * (dto.quantity ?? 1) * (dto.frequency ?? 1);
+    const amount = new Prisma.Decimal(dto.unitPrice).mul(dto.quantity ?? 1).mul(dto.frequency ?? 1);
     return this.prisma.productionCost.create({
       data: { ...dto, amount, createdById: user.id },
     });
