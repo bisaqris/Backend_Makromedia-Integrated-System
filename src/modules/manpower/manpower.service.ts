@@ -13,6 +13,12 @@ export class ManpowerService {
     });
   }
 
+  async findOne(id: string) {
+    const manpower = await this.prisma.manpower.findFirst({ where: { id, deletedAt: null } });
+    if (!manpower) throw new NotFoundException('Manpower tidak ditemukan.');
+    return manpower;
+  }
+
   create(dto: UpsertManpowerDto) {
     return this.prisma.manpower.create({ data: dto });
   }
