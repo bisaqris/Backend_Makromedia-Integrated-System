@@ -14,7 +14,10 @@ export class ManpowerService {
   }
 
   async findOne(id: string) {
-    const manpower = await this.prisma.manpower.findFirst({ where: { id, deletedAt: null } });
+    const manpower = await this.prisma.manpower.findFirst({
+      where: { id, deletedAt: null },
+      include: { skills: { include: { skill: true } } },
+    });
     if (!manpower) throw new NotFoundException('Manpower tidak ditemukan.');
     return manpower;
   }
