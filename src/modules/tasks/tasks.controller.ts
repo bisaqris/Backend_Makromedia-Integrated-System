@@ -12,20 +12,28 @@ export class TasksController {
   constructor(private tasks: TasksService) {}
 
   @Get('projects/:projectId/tasks')
-  byProject(@Param('projectId', ParseUUIDPipe) projectId: string) {
-    return this.tasks.findByProject(projectId);
+  byProject(@Param('projectId', ParseUUIDPipe) projectId: string, @CurrentUser() user: AuthUser) {
+    return this.tasks.findByProject(projectId, user);
   }
 
   @Post('projects/:projectId/tasks')
   @Roles('PROJECT_MANAGER', 'FINANCE', 'DIREKTUR')
-  create(@Param('projectId', ParseUUIDPipe) projectId: string, @Body() dto: CreateTaskDto) {
-    return this.tasks.create(projectId, dto);
+  create(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Body() dto: CreateTaskDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.tasks.create(projectId, dto, user);
   }
 
   @Patch('tasks/:id')
   @Roles('PROJECT_MANAGER', 'FINANCE', 'DIREKTUR')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateTaskDto) {
-    return this.tasks.update(id, dto);
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateTaskDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.tasks.update(id, dto, user);
   }
 
   @Patch('tasks/:id/progress')
@@ -40,7 +48,7 @@ export class TasksController {
 
   @Delete('tasks/:id')
   @Roles('PROJECT_MANAGER', 'FINANCE', 'DIREKTUR')
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.tasks.remove(id);
+  remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
+    return this.tasks.remove(id, user);
   }
 }

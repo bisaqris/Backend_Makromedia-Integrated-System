@@ -13,7 +13,8 @@ describe('ProductionCostsService (approval workflow)', () => {
         update: jest.fn().mockImplementation((args) => Promise.resolve(args.data)),
       },
     };
-    service = new ProductionCostsService(prisma);
+    const access = { assertCanAccess: jest.fn() } as any;
+    service = new ProductionCostsService(prisma, access);
   });
 
   it('approve menyetel status APPROVED + approvedById', async () => {
@@ -39,7 +40,7 @@ describe('ProductionCostsService (approval workflow)', () => {
 
   it('update ditolak (400) bila biaya sudah APPROVED', async () => {
     prisma.productionCost.findUnique.mockResolvedValue({ id: 'c1', status: StatusBiaya.APPROVED });
-    await expect(service.update('c1', {} as any)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.update('c1', {} as any, { id: 'pm' } as any)).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('melempar 404 bila biaya tidak ditemukan', async () => {

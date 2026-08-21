@@ -85,6 +85,7 @@ model User {
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tokenVersion Int      @default(0) @map("token_version") // dinaikkan saat ganti password (invalidasi token lama)
 
   // Relations
   projectsCreated  Project[]         @relation("ProjectCreatedBy")
