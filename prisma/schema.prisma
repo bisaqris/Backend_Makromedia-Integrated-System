@@ -157,7 +157,36 @@ model Manpower {
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  skills           ManpowerSkill[]
+
   @@map("manpower")
+}
+
+// ----------------------------------------------------------------------------
+//  SKILL (master data) + relasi M-N ke Manpower
+// ----------------------------------------------------------------------------
+
+model Skill {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique @db.VarChar(80)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  manpower ManpowerSkill[]
+
+  @@map("skills")
+}
+
+model ManpowerSkill {
+  manpowerId String @map("manpower_id") @db.Uuid
+  skillId    String @map("skill_id") @db.Uuid
+
+  manpower Manpower @relation(fields: [manpowerId], references: [id], onDelete: Cascade)
+  skill    Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([manpowerId, skillId])
+  @@index([skillId], map: "idx_manpower_skill_skill")
+  @@map("manpower_skills")
 }
 
 // ----------------------------------------------------------------------------
