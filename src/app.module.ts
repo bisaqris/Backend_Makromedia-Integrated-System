@@ -26,6 +26,7 @@ import { QuotationsModule } from './modules/quotations/quotations.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { ProductionCostsModule } from './modules/production-costs/production-costs.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { CalendarModule } from './modules/calendar/calendar.module';
     InvoicesModule,
     ProductionCostsModule,
     CalendarModule,
+    DashboardModule,
   ],
   providers: [
     // 1. Interceptors: Log request latency & format response data
