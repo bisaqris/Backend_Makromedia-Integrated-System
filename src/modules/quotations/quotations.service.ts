@@ -1,4 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException, ForbiddenException, Injectable, NotFoundException,
+} from '@nestjs/common';
+import { StatusQuotation } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
 import { CreateQuotationDto } from './dto/quotation.dto';
@@ -38,6 +41,38 @@ export class QuotationsService {
         subtotal, totalValue: total, notes: dto.notes,
         items: { create: items },
       },
+      include: { items: true },
+    });
+  }
+
+  /**
+   * Approval workflow: DRAFT -> SENT (Sales/Finance) -> APPROVED/REJECTED (Direktur).
+   * Menegakkan transisi valid + otorisasi role pada tiap langkah.
+   */
+  async updateStatus(id: string, status: StatusQuotation, user: AuthUser) {
+    const quotation = await this.findOne(id);
+
+    if (status === StatusQuotation.SENT) {
+      if (quotation.status !== StatusQuotation.DRAFT) {
+        throw new BadRequestException('Hanya quotation berstatus DRAFT yang dapat dikirim (SENT).');
+      }
+      if (!['SALES', 'FINANCE', 'DIREKTUR'].includes(user.role)) {
+        throw new ForbiddenException('Hanya Sales, Finance, atau Direktur yang dapat mengirim quotation.');
+      }
+    } else if (status === StatusQuotation.APPROVED || status === StatusQuotation.REJECTED) {
+      if (quotation.status !== StatusQuotation.SENT) {
+        throw new BadRequestException('Hanya quotation berstatus SENT yang dapat di-approve/reject.');
+      }
+      if (user.role !== 'DIREKTUR') {
+        throw new ForbiddenException('Hanya Direktur yang dapat menyetujui/menolak quotation.');
+      }
+    } else {
+      throw new BadRequestException('Transisi status tidak valid.');
+    }
+
+    return this.prisma.quotation.update({
+      where: { id },
+      data: { status },
       include: { items: true },
     });
   }
