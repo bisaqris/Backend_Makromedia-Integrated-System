@@ -1,4 +1,4 @@
-import { ApiResponseOptions, getSchemaPath } from '@nestjs/swagger';
+import { ApiProperty, ApiResponseOptions, getSchemaPath } from '@nestjs/swagger';
 import {
   ReferenceObject,
   SchemaObject,
@@ -19,15 +19,18 @@ export class SuccessEnvelopeDto {
    * HTTP status code
    * @example 200
    */
+  @ApiProperty({ example: 200 })
   statusCode: number;
 
   /**
    * Pesan response
    * @example Success
    */
+  @ApiProperty({ example: 'Success' })
   message: string;
 
   /** Payload data */
+  @ApiProperty({ nullable: true })
   data: unknown;
 }
 
