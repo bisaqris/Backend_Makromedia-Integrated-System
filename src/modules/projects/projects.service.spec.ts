@@ -6,7 +6,12 @@ describe('ProjectsService (RBAC scoping)', () => {
   let prisma: any;
 
   beforeEach(() => {
-    prisma = { project: { findMany: jest.fn().mockResolvedValue([]) } };
+    prisma = {
+      project: {
+        findMany: jest.fn().mockResolvedValue([]),
+        count: jest.fn().mockResolvedValue(0),
+      },
+    };
     service = new ProjectsService(prisma);
   });
 

@@ -26,6 +26,16 @@ export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> 
           return data;
         }
 
+        // Jika response merupakan hasil paginasi (mengandung 'data' dan 'meta'), pisahkan meta ke root level
+        if (data && typeof data === 'object' && 'data' in data && 'meta' in data) {
+          return {
+            statusCode: response.statusCode || 200,
+            message: 'Success',
+            data: (data as any).data ?? null,
+            meta: (data as any).meta,
+          } as any;
+        }
+
         return {
           statusCode: response.statusCode || 200,
           message: 'Success',

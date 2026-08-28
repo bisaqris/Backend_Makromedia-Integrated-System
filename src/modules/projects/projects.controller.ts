@@ -1,7 +1,7 @@
 import {
   Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, AuthUser } from '../../common/decorators/current-user.decorator';
 import { ProjectsService } from './projects.service';
@@ -16,6 +16,8 @@ export class ProjectsController {
   constructor(private projects: ProjectsService) {}
 
   @Get()
+  @ApiOperation({ summary: 'Ambil daftar proyek dengan filter dan pagination' })
+  @ApiOkResponse({ description: 'Daftar proyek berhasil diambil.' })
   findAll(@Query() query: QueryProjectDto, @CurrentUser() user: AuthUser) {
     return this.projects.findAll(query, user);
   }

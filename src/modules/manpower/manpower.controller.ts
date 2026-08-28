@@ -1,10 +1,11 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Put } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Put, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { ManpowerService } from './manpower.service';
 import { SkillsService } from './skills.service';
 import { UpsertManpowerDto } from './dto/manpower.dto';
 import { CreateSkillDto, SetManpowerSkillsDto, UpdateSkillDto } from './dto/skill.dto';
+import { QueryManpowerDto } from './dto/query-manpower.dto';
 
 @ApiTags('manpower')
 @ApiBearerAuth()
@@ -13,8 +14,10 @@ export class ManpowerController {
   constructor(private svc: ManpowerService, private skills: SkillsService) {}
 
   @Get()
-  findAll() {
-    return this.svc.findAll();
+  @ApiOperation({ summary: 'Ambil daftar manpower/crew dengan filter dan pagination' })
+  @ApiOkResponse({ description: 'Daftar manpower berhasil diambil.' })
+  findAll(@Query() query: QueryManpowerDto) {
+    return this.svc.findAll(query);
   }
 
   // --- Skill master data --- (route literal 'skills' harus dideklarasikan sebelum ':id')
