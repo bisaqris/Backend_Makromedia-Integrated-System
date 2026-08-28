@@ -11,7 +11,6 @@ import {
 import { Roles } from '../../common/decorators/roles.decorator';
 import {
   BadRequestResponse,
-  ConflictResponse,
   ForbiddenResponse,
   UnauthorizedResponse,
 } from '../../common/swagger/api-response.schema';
