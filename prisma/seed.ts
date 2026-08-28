@@ -41,7 +41,9 @@ async function main() {
   await prisma.projectMember.deleteMany();
   await prisma.projectProgress.deleteMany();
   await prisma.project.deleteMany();
-  await prisma.crew.deleteMany();
+  await prisma.manpowerSkill.deleteMany();
+  await prisma.skill.deleteMany();
+  await prisma.manpower.deleteMany();
   await prisma.client.deleteMany();
   await prisma.companyClient.deleteMany();
 
@@ -64,12 +66,27 @@ async function main() {
     },
   });
 
-  // ---- Crew ------------------------------------------------------------
-  await prisma.crew.createMany({
-    data: [
-      { name: 'Andy Setiawan', position: 'Senior Videographer', skill: 'Videography, Color Grading', employmentStatus: 'FULLTIME', standardRate: '300000' },
-      { name: 'Krismanegara', position: 'Cameraman', skill: 'Cinematography', employmentStatus: 'FREELANCE', standardRate: '100000' },
-    ],
+  // ---- Skills (master data) ------------------------------------------------
+  const [skVideo, skColor, skCinema, skAudio, skEditing] = await Promise.all(
+    ['Videography', 'Color Grading', 'Cinematography', 'Audio Engineering', 'Editing'].map((name) =>
+      prisma.skill.create({ data: { name } }),
+    ),
+  );
+
+  // ---- Manpower (+ tautan skill many-to-many) ------------------------------
+  await prisma.manpower.create({
+    data: {
+      name: 'Andy Setiawan', position: 'Senior Videographer', skill: 'Videography, Color Grading',
+      employmentStatus: 'FULLTIME', standardRate: '300000',
+      skills: { create: [{ skillId: skVideo.id }, { skillId: skColor.id }, { skillId: skEditing.id }] },
+    },
+  });
+  await prisma.manpower.create({
+    data: {
+      name: 'Krismanegara', position: 'Cameraman', skill: 'Cinematography',
+      employmentStatus: 'FREELANCE', standardRate: '100000',
+      skills: { create: [{ skillId: skCinema.id }, { skillId: skAudio.id }] },
+    },
   });
 
   // ---- Project -------------------------------------------------------------
@@ -167,7 +184,105 @@ async function main() {
     },
   });
 
-  console.log('✅ Seed selesai. Login demo — password semua akun: Password123!');
+  // Invoice DRAFT & cost REJECTED pada proyek pertama (variasi status).
+  await prisma.invoice.create({
+    data: {
+      projectId: project.id, createdById: finance.id,
+      invoiceNumber: '006/INV.MAKROMEDIA/11/2026', amount: '1000000', status: 'DRAFT',
+      items: { create: [{ item: 'Termin 2 (draft)', unitPrice: '1000000', quantity: 1, frequency: 1, subTotal: '1000000' }] },
+    },
+  });
+  await prisma.productionCost.create({
+    data: {
+      projectId: project.id, createdById: pm.id, category: 'Konsumsi',
+      description: 'Katering kru (ditolak)', unitPrice: '500000', quantity: 1, frequency: 1,
+      amount: '500000', status: 'REJECTED', submittedAt: new Date(),
+      approvedById: direktur.id, approvedAt: new Date(), rejectionNote: 'Melebihi anggaran konsumsi.',
+    },
+  });
+
+  // ---- Proyek COMPLETED: quotation APPROVED, invoice PAID, cost APPROVED, lunas ----
+  const projectDone = await prisma.project.create({
+    data: {
+      name: 'Corporate Profile Video 2025', description: 'Company profile & product teaser.',
+      category: 'CORPORATE_VIDEO', clientId: client.id, createdById: sales.id, projectManagerId: pm.id,
+      contractValue: '15000000', status: 'COMPLETED',
+      startDate: new Date('2025-09-01'), endDate: new Date('2025-10-15'),
+      members: { create: [{ userId: produksi.id }] },
+    },
+  });
+  await prisma.quotation.create({
+    data: {
+      projectId: projectDone.id, createdById: sales.id,
+      quotationNumber: '002/QUO.MAKROMEDIA/09/2025', status: 'APPROVED',
+      subtotal: '15000000', totalValue: '15000000',
+      items: { create: [{ item: 'Corporate Video Package', unitPrice: '15000000', quantity: 1, frequency: 1, subTotal: '15000000' }] },
+    },
+  });
+  await prisma.invoice.create({
+    data: {
+      projectId: projectDone.id, createdById: finance.id,
+      invoiceNumber: '002/INV.MAKROMEDIA/10/2025', amount: '15000000', status: 'PAID',
+      dueDate: new Date('2025-10-30'),
+      items: { create: [{ item: 'Corporate Video Package', unitPrice: '15000000', quantity: 1, frequency: 1, subTotal: '15000000' }] },
+    },
+  });
+  await prisma.productionCost.create({
+    data: {
+      projectId: projectDone.id, createdById: pm.id, category: 'Sewa Alat',
+      description: 'Cinema camera & lighting', unitPrice: '2000000', quantity: 1, frequency: 2,
+      amount: '4000000', status: 'APPROVED', submittedAt: new Date('2025-09-10'),
+      approvedById: direktur.id, approvedAt: new Date('2025-09-11'),
+    },
+  });
+  await prisma.payment.create({
+    data: { projectId: projectDone.id, amount: '15000000', paymentMethod: 'Transfer', bankTo: 'BCA Bisnis', note: 'Pelunasan' },
+  });
+  await prisma.task.create({
+    data: { projectId: projectDone.id, assignedToId: produksi.id, title: 'Final delivery', progress: 100, status: 'DONE' },
+  });
+
+  // ---- Proyek DRAFT: quotation DRAFT, belum ada invoice ----
+  const projectDraft = await prisma.project.create({
+    data: {
+      name: 'Wedding Cinematic Package', category: 'WEDDING', clientId: client.id,
+      createdById: sales.id, contractValue: '8000000', status: 'DRAFT',
+    },
+  });
+  await prisma.quotation.create({
+    data: {
+      projectId: projectDraft.id, createdById: sales.id,
+      quotationNumber: '003/QUO.MAKROMEDIA/12/2026', status: 'DRAFT',
+      subtotal: '8000000', totalValue: '8000000',
+      items: { create: [{ item: 'Wedding Cinematic', unitPrice: '8000000', quantity: 1, frequency: 1, subTotal: '8000000' }] },
+    },
+  });
+
+  // ---- Proyek ON_HOLD: quotation REJECTED, invoice OVERDUE ----
+  const projectHold = await prisma.project.create({
+    data: {
+      name: 'Short Film Production', category: 'FILM_PRODUCTION', clientId: client.id,
+      createdById: sales.id, projectManagerId: pm.id, contractValue: '25000000', status: 'ON_HOLD',
+    },
+  });
+  await prisma.quotation.create({
+    data: {
+      projectId: projectHold.id, createdById: sales.id,
+      quotationNumber: '005/QUO.MAKROMEDIA/08/2026', status: 'REJECTED',
+      subtotal: '25000000', totalValue: '25000000',
+      items: { create: [{ item: 'Film Production Full', unitPrice: '25000000', quantity: 1, frequency: 1, subTotal: '25000000' }] },
+    },
+  });
+  await prisma.invoice.create({
+    data: {
+      projectId: projectHold.id, createdById: finance.id,
+      invoiceNumber: '004/INV.MAKROMEDIA/08/2026', amount: '10000000', status: 'OVERDUE',
+      dueDate: new Date('2026-08-01'),
+      items: { create: [{ item: 'DP Produksi', unitPrice: '10000000', quantity: 1, frequency: 1, subTotal: '10000000' }] },
+    },
+  });
+
+  console.log('✅ Seed selesai. Login demo - password semua akun: Password123!');
   console.log('   direktur@makromedia.id | finance@makromedia.id | sales@makromedia.id | pm@makromedia.id | produksi@makromedia.id');
 }
 

@@ -26,13 +26,22 @@ import { CreateInvoiceDto } from './dto/invoice.dto';
 @Controller('invoices')
 export class InvoicesController {
   constructor(private svc: InvoicesService) {}
-
   @Get('project/:projectId')
+  @Roles('SALES', 'FINANCE', 'DIREKTUR')
   @ApiOperation({ summary: 'Ambil daftar invoice berdasarkan proyek' })
   @ApiOkResponse({ description: 'Daftar invoice berhasil diambil.' })
   @ApiUnauthorizedResponse(UnauthorizedResponse)
   @ApiNotFoundResponse(NotFoundResponse)
   byProject(@Param('projectId', ParseUUIDPipe) id: string) { return this.svc.findByProject(id); }
+
+  @Get(':id')
+  @Roles('SALES', 'FINANCE', 'DIREKTUR')
+  @ApiOperation({ summary: 'Ambil detail invoice berdasarkan ID' })
+  @ApiOkResponse({ description: 'Detail invoice berhasil diambil.' })
+  @ApiUnauthorizedResponse(UnauthorizedResponse)
+  @ApiForbiddenResponse(ForbiddenResponse)
+  @ApiNotFoundResponse(NotFoundResponse)
+  findOne(@Param('id', ParseUUIDPipe) id: string) { return this.svc.findOne(id); }
 
   @Post()
   @Roles('FINANCE', 'DIREKTUR')

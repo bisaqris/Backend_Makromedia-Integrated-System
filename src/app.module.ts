@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 
 import configuration from './config/configuration';
+import { validateEnv } from './config/env.validation';
 import { PrismaModule } from './prisma/prisma.module';
 import { HealthModule } from './health/health.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -16,35 +18,44 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { CompanyClientsModule } from './modules/company-clients/company-clients.module';
 import { ClientsModule } from './modules/clients/clients.module';
-import { CrewModule } from './modules/crew/crew.module';
+import { ManpowerModule } from './modules/manpower/manpower.module';
 import { ProjectsModule } from './modules/projects/projects.module';
+import { TasksModule } from './modules/tasks/tasks.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 import { QuotationsModule } from './modules/quotations/quotations.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { ProductionCostsModule } from './modules/production-costs/production-costs.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
+    ConfigModule.forRoot({ isGlobal: true, load: [configuration], validate: validateEnv }),
+    // Rate limiting default: 100 request / 60 detik per IP.
+    ThrottlerModule.forRoot({ throttlers: [{ ttl: 60_000, limit: 100 }] }),
     PrismaModule,
     HealthModule,
     AuthModule,
     UsersModule,
     CompanyClientsModule,
     ClientsModule,
-    CrewModule,
+    ManpowerModule,
     ProjectsModule,
+    TasksModule,
+    PaymentsModule,
     QuotationsModule,
     InvoicesModule,
     ProductionCostsModule,
     CalendarModule,
+    DashboardModule,
   ],
   providers: [
     // 1. Interceptors: Log request latency & format response data
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
     { provide: APP_INTERCEPTOR, useClass: TransformInterceptor },
 
-    // 2. Guards: Autentikasi (JWT) dulu, baru otorisasi (RBAC)
+    // 2. Guards: Rate limit → Autentikasi (JWT) → Otorisasi (RBAC)
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
 
