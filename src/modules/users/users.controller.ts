@@ -1,6 +1,19 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { Roles } from '../../common/decorators/roles.decorator';
+import {
+  BadRequestResponse,
+  ForbiddenResponse,
+  UnauthorizedResponse,
+} from '../../common/swagger/api-response.schema';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 
@@ -11,6 +24,18 @@ import { CreateUserDto } from './dto/create-user.dto';
 export class UsersController {
   constructor(private users: UsersService) {}
 
-  @Get() findAll() { return this.users.findAll(); }
-  @Post() create(@Body() dto: CreateUserDto) { return this.users.create(dto); }
+  @Get()
+  @ApiOperation({ summary: 'Ambil daftar semua pengguna (DIREKTUR only)' })
+  @ApiOkResponse({ description: 'Daftar pengguna berhasil diambil.' })
+  @ApiUnauthorizedResponse(UnauthorizedResponse)
+  @ApiForbiddenResponse(ForbiddenResponse)
+  findAll() { return this.users.findAll(); }
+
+  @Post()
+  @ApiOperation({ summary: 'Buat akun pengguna baru (DIREKTUR only)' })
+  @ApiCreatedResponse({ description: 'Pengguna berhasil dibuat.' })
+  @ApiUnauthorizedResponse(UnauthorizedResponse)
+  @ApiForbiddenResponse(ForbiddenResponse)
+  @ApiOkResponse(BadRequestResponse)
+  create(@Body() dto: CreateUserDto) { return this.users.create(dto); }
 }

@@ -1,3 +1,9 @@
+allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  '@scarf/scarf': true
+  prisma: true
+
 # pnpm 10+ memindahkan `overrides` & sebagian setting ke sini (dulu di package.json).
 # Override ini menambal kerentanan pada dependency transitif (hasil `pnpm audit`).
 overrides:
