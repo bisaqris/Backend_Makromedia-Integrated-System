@@ -1,5 +1,8 @@
-import { IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsIn, IsOptional, IsString, IsUUID } from 'class-validator';
 import { PaginationQueryDto } from '../../../common/pagination/pagination.dto';
+
+// Nilai kolom Manpower.employmentStatus (String di schema; divalidasi di layer DTO).
+export const EMPLOYMENT_STATUSES = ['FULLTIME', 'PART_TIME', 'FREELANCE', 'INTERNSHIP'] as const;
 
 export class QueryManpowerDto extends PaginationQueryDto {
   @IsOptional()
@@ -7,8 +10,8 @@ export class QueryManpowerDto extends PaginationQueryDto {
   search?: string;
 
   @IsOptional()
-  @IsString()
-  employmentStatus?: string; // FULLTIME/PART_TIME/FREELANCE/INTERNSHIP
+  @IsIn(EMPLOYMENT_STATUSES)
+  employmentStatus?: string;
 
   @IsOptional()
   @IsUUID()
