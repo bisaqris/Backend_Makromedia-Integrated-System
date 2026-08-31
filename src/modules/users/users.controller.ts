@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiCreatedResponse,
   ApiForbiddenResponse,
@@ -36,6 +37,6 @@ export class UsersController {
   @ApiCreatedResponse({ description: 'Pengguna berhasil dibuat.' })
   @ApiUnauthorizedResponse(UnauthorizedResponse)
   @ApiForbiddenResponse(ForbiddenResponse)
-  @ApiOkResponse(BadRequestResponse)
+  @ApiBadRequestResponse(BadRequestResponse)
   create(@Body() dto: CreateUserDto) { return this.users.create(dto); }
 }
