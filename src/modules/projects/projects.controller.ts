@@ -14,7 +14,6 @@ import {
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, AuthUser } from '../../common/decorators/current-user.decorator';
 import {
-  BadRequestResponse,
   ForbiddenResponse,
   NotFoundResponse,
   UnauthorizedResponse,
