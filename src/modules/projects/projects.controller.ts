@@ -14,7 +14,6 @@ import {
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, AuthUser } from '../../common/decorators/current-user.decorator';
 import {
-  BadRequestResponse,
   ForbiddenResponse,
   NotFoundResponse,
   UnauthorizedResponse,
@@ -31,7 +30,7 @@ export class ProjectsController {
   constructor(private projects: ProjectsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Ambil daftar proyek (bisa difilter berdasarkan role)' })
+  @ApiOperation({ summary: 'Ambil daftar proyek dengan filter dan pagination (scoped per role)' })
   @ApiOkResponse({ description: 'Daftar proyek berhasil diambil.' })
   @ApiUnauthorizedResponse(UnauthorizedResponse)
   findAll(@Query() query: QueryProjectDto, @CurrentUser() user: AuthUser) {

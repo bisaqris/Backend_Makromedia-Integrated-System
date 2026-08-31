@@ -5,6 +5,7 @@ import { AuthUser } from '../../common/decorators/current-user.decorator';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { QueryProjectDto } from './dto/query-project.dto';
+import { getSkipTake, createPaginatedResponse } from '../../common/pagination/pagination.helper';
 
 @Injectable()
 export class ProjectsService {
@@ -21,14 +22,25 @@ export class ProjectsService {
       ...(user.role === RoleUser.PRODUKSI && { members: { some: { userId: user.id } } }),
     };
 
-    return this.prisma.project.findMany({
+    const total = await this.prisma.project.count({ where });
+    const { skip, take } = getSkipTake(query);
+
+    const allowedSortFields = ['createdAt', 'name', 'status', 'eventDate', 'startDate', 'endDate'];
+    const sortField = allowedSortFields.includes(query.sort ?? '') ? query.sort! : 'createdAt';
+    const order = query.order ?? 'desc';
+
+    const data = await this.prisma.project.findMany({
       where,
       include: {
         client: { include: { company: true } },
         projectManager: { select: { id: true, name: true } },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { [sortField]: order },
+      skip,
+      take,
     });
+
+    return createPaginatedResponse(data, total, query);
   }
 
   async findOne(id: string, user: AuthUser) {
