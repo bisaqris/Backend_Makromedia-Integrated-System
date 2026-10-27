@@ -1,33 +1,53 @@
 version: 2
 updates:
-  # Dependency aplikasi (pnpm terdeteksi via ekosistem npm)
+  # Dependency aplikasi (pnpm terdeteksi via ekosistem npm).
+  # PR diarahkan ke develop (sesuai GitFlow), update digrup, major diabaikan
+  # (ditangani manual karena rawan breaking change).
   - package-ecosystem: npm
     directory: "/"
+    target-branch: develop
     schedule:
       interval: weekly
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
     labels: ["dependencies"]
     commit-message:
       prefix: "chore(deps)"
     groups:
-      # Kurangi noise: kelompokkan update patch/minor non-major jadi satu PR
-      minor-and-patch:
+      production-dependencies:
+        dependency-type: "production"
         update-types: ["minor", "patch"]
+      development-dependencies:
+        dependency-type: "development"
+        update-types: ["minor", "patch"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
-  # Action di GitHub Actions workflows
+  # GitHub Actions di workflows.
   - package-ecosystem: github-actions
     directory: "/"
+    target-branch: develop
     schedule:
-      interval: weekly
+      interval: monthly
     labels: ["ci"]
     commit-message:
       prefix: "chore(ci)"
+    groups:
+      github-actions:
+        patterns: ["*"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
-  # Base image pada Dockerfile
+  # Base image pada Dockerfile.
   - package-ecosystem: docker
     directory: "/"
+    target-branch: develop
     schedule:
-      interval: weekly
+      interval: monthly
     labels: ["docker"]
     commit-message:
       prefix: "chore(docker)"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
