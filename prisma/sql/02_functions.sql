@@ -31,7 +31,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 2.3.6  Tambah anggota (crew/user) ke proyek
+-- 2.3.6  Tambah anggota (manpower/user) ke proyek
 CREATE OR REPLACE PROCEDURE sp_add_project_member(
     p_project_id UUID,
     p_user_id    UUID

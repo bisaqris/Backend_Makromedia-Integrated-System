@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
+
+jobs:
+  build-test:
+    name: Lint, build & test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: makromedia
+          POSTGRES_PASSWORD: makromedia
+          POSTGRES_DB: makromedia_db
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U makromedia -d makromedia_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://makromedia:makromedia@localhost:5433/makromedia_db?schema=public
+      JWT_SECRET: ci-test-secret-32-chars-minimum-length
+      JWT_EXPIRES_IN: 1d
+      NODE_ENV: test
+      PORT: 4000
+      FRONTEND_URL: http://localhost:3000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Generate Prisma Client
+        run: pnpm prisma:generate
+
+      - name: Typecheck (tsc --noEmit)
+        run: pnpm exec tsc --noEmit -p tsconfig.json
+
+      - name: Build (nest build)
+        run: pnpm build
+
+      - name: Lint (eslint)
+        run: pnpm exec eslint "{src,test}/**/*.ts"
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Apply schema, SQL objects & seed
+        run: pnpm db:setup
+
+      - name: e2e tests
+        run: pnpm test:e2e

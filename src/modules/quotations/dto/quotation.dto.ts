@@ -1,7 +1,8 @@
 import { Type } from 'class-transformer';
 import {
-  IsArray, IsInt, IsNumber, IsOptional, IsString, IsUUID, Min, ValidateNested,
+  IsArray, IsEnum, IsInt, IsNumber, IsOptional, IsString, IsUUID, Min, ValidateNested,
 } from 'class-validator';
+import { StatusQuotation } from '@prisma/client';
 
 export class QuotationItemDto {
   @IsString() item: string;
@@ -20,4 +21,8 @@ export class CreateQuotationDto {
   @IsOptional() @IsString() notes?: string;
   @IsArray() @ValidateNested({ each: true }) @Type(() => QuotationItemDto)
   items: QuotationItemDto[];
+}
+
+export class UpdateQuotationStatusDto {
+  @IsEnum(StatusQuotation) status: StatusQuotation;
 }

@@ -83,10 +83,26 @@ model User {
   passwordHash String   @map("password_hash")
   role         RoleUser
   isActive     Boolean  @default(true) @map("is_active")
+
+  // Data profil tambahan (dikonsumsi halaman Profile di FE)
+  dateOfBirth   DateTime? @map("date_of_birth") @db.Date
+  phone         String?   @db.VarChar(30)
+  province      String?   @db.VarChar(120)
+  city          String?   @db.VarChar(120)
+  subdistrict   String?   @db.VarChar(120) // kecamatan
+  village       String?   @db.VarChar(120) // kelurahan/desa
+  detailAddress String?   @map("detail_address")
+  bankName      String?   @map("bank_name") @db.VarChar(80)
+  bankAccountNo String?   @map("bank_account_no") @db.VarChar(40)
+  positionId    String?   @map("position_id") @db.Uuid
+
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tokenVersion Int      @default(0) @map("token_version") // dinaikkan saat ganti password (invalidasi token lama)
 
   // Relations
+  position         Position?         @relation(fields: [positionId], references: [id], onDelete: SetNull)
+  skills           UserSkill[]
   projectsCreated  Project[]         @relation("ProjectCreatedBy")
   projectsManaged  Project[]         @relation("ProjectManager")
   memberships      ProjectMember[]
@@ -97,7 +113,24 @@ model User {
   productionCosts  ProductionCost[]  @relation("CostCreatedBy")
   costApprovals    ProductionCost[]  @relation("CostApprovedBy")
 
+  @@index([positionId], map: "idx_user_position")
   @@map("users")
+}
+
+// ----------------------------------------------------------------------------
+//  POSITION / JABATAN (master data) — dipakai Manpower (dan User pada fitur profil)
+// ----------------------------------------------------------------------------
+
+model Position {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique @db.VarChar(80)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  users    User[]
+  manpower Manpower[]
+
+  @@map("positions")
 }
 
 // ----------------------------------------------------------------------------
@@ -139,13 +172,14 @@ model Client {
 }
 
 // ----------------------------------------------------------------------------
-//  CREW
+//  MANPOWER
 // ----------------------------------------------------------------------------
 
-model Crew {
+model Manpower {
   id               String    @id @default(uuid()) @db.Uuid
   name             String    @db.VarChar(120)
-  position         String?   @db.VarChar(80)
+  position         String?   @db.VarChar(80) // label jabatan (free-text, legacy)
+  positionId       String?   @map("position_id") @db.Uuid // referensi master Position
   email            String?   @db.VarChar(160)
   phone            String?   @db.VarChar(30)
   skill            String?   @db.VarChar(160)
@@ -157,7 +191,51 @@ model Crew {
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  @@map("crews")
+  positionRef      Position?       @relation(fields: [positionId], references: [id], onDelete: SetNull)
+  skills           ManpowerSkill[]
+
+  @@index([positionId], map: "idx_manpower_position")
+  @@map("manpower")
+}
+
+// ----------------------------------------------------------------------------
+//  SKILL (master data) + relasi M-N ke Manpower
+// ----------------------------------------------------------------------------
+
+model Skill {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique @db.VarChar(80)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  manpower ManpowerSkill[]
+  users    UserSkill[]
+
+  @@map("skills")
+}
+
+model UserSkill {
+  userId  String @map("user_id") @db.Uuid
+  skillId String @map("skill_id") @db.Uuid
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([userId, skillId])
+  @@index([skillId], map: "idx_user_skill_skill")
+  @@map("user_skills")
+}
+
+model ManpowerSkill {
+  manpowerId String @map("manpower_id") @db.Uuid
+  skillId    String @map("skill_id") @db.Uuid
+
+  manpower Manpower @relation(fields: [manpowerId], references: [id], onDelete: Cascade)
+  skill    Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([manpowerId, skillId])
+  @@index([skillId], map: "idx_manpower_skill_skill")
+  @@map("manpower_skills")
 }
 
 // ----------------------------------------------------------------------------

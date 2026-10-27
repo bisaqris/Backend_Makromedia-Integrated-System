@@ -1,10 +1,11 @@
-import { IsEmail, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsEmail, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 
-export class UpsertCrewDto {
+export class UpsertManpowerDto {
   @IsString()
   name: string;
 
   @IsOptional() @IsString() position?: string;
+  @IsOptional() @IsUUID() positionId?: string;
   @IsOptional() @IsEmail() email?: string;
   @IsOptional() @IsString() phone?: string;
   @IsOptional() @IsString() skill?: string;

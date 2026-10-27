@@ -1,8 +1,23 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { StatusInvoice } from '@prisma/client';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, AuthUser } from '../../common/decorators/current-user.decorator';
+import {
+  ForbiddenResponse,
+  NotFoundResponse,
+  UnauthorizedResponse,
+} from '../../common/swagger/api-response.schema';
 import { InvoicesService } from './invoices.service';
 import { CreateInvoiceDto } from './dto/invoice.dto';
 
@@ -11,11 +26,49 @@ import { CreateInvoiceDto } from './dto/invoice.dto';
 @Controller('invoices')
 export class InvoicesController {
   constructor(private svc: InvoicesService) {}
-  @Get('project/:projectId') byProject(@Param('projectId', ParseUUIDPipe) id: string) { return this.svc.findByProject(id); }
-  @Post() @Roles('FINANCE', 'DIREKTUR')
+  @Get('project/:projectId')
+  @Roles('SALES', 'FINANCE', 'DIREKTUR')
+  @ApiOperation({ summary: 'Ambil daftar invoice berdasarkan proyek' })
+  @ApiOkResponse({ description: 'Daftar invoice berhasil diambil.' })
+  @ApiUnauthorizedResponse(UnauthorizedResponse)
+  @ApiNotFoundResponse(NotFoundResponse)
+  byProject(@Param('projectId', ParseUUIDPipe) id: string) { return this.svc.findByProject(id); }
+
+  @Get(':id')
+  @Roles('SALES', 'FINANCE', 'DIREKTUR')
+  @ApiOperation({ summary: 'Ambil detail invoice berdasarkan ID' })
+  @ApiOkResponse({ description: 'Detail invoice berhasil diambil.' })
+  @ApiUnauthorizedResponse(UnauthorizedResponse)
+  @ApiForbiddenResponse(ForbiddenResponse)
+  @ApiNotFoundResponse(NotFoundResponse)
+  findOne(@Param('id', ParseUUIDPipe) id: string) { return this.svc.findOne(id); }
+
+  @Get(':id/preview')
+  @Roles('SALES', 'FINANCE', 'DIREKTUR')
+  @ApiOperation({ summary: 'Data JSON lengkap untuk preview dokumen invoice' })
+  @ApiOkResponse({ description: 'Data preview invoice berhasil diambil.' })
+  @ApiUnauthorizedResponse(UnauthorizedResponse)
+  @ApiNotFoundResponse(NotFoundResponse)
+  preview(@Param('id', ParseUUIDPipe) id: string) { return this.svc.getPreview(id); }
+
+  @Post()
+  @Roles('FINANCE', 'DIREKTUR')
+  @ApiOperation({ summary: 'Buat invoice baru' })
+  @ApiCreatedResponse({ description: 'Invoice berhasil dibuat.' })
+  @ApiUnauthorizedResponse(UnauthorizedResponse)
+  @ApiForbiddenResponse(ForbiddenResponse)
   create(@Body() dto: CreateInvoiceDto, @CurrentUser() user: AuthUser) { return this.svc.create(dto, user); }
-  @Patch(':id/status') @Roles('FINANCE', 'DIREKTUR')
+
+  @Patch(':id/status')
+  @Roles('FINANCE', 'DIREKTUR')
+  @ApiOperation({ summary: 'Update status invoice' })
+  @ApiBody({ schema: { type: 'object', properties: { status: { type: 'string', enum: Object.values(StatusInvoice), example: 'PAID' } } } })
+  @ApiOkResponse({ description: 'Status invoice berhasil diperbarui.' })
+  @ApiUnauthorizedResponse(UnauthorizedResponse)
+  @ApiForbiddenResponse(ForbiddenResponse)
+  @ApiNotFoundResponse(NotFoundResponse)
   status(@Param('id', ParseUUIDPipe) id: string, @Body('status') status: StatusInvoice) {
     return this.svc.updateStatus(id, status);
   }
 }
+

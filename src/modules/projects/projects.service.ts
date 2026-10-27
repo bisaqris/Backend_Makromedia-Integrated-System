@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, RoleUser } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { QueryProjectDto } from './dto/query-project.dto';
+import { getSkipTake, createPaginatedResponse } from '../../common/pagination/pagination.helper';
 
 @Injectable()
 export class ProjectsService {
@@ -21,17 +22,34 @@ export class ProjectsService {
       ...(user.role === RoleUser.PRODUKSI && { members: { some: { userId: user.id } } }),
     };
 
-    return this.prisma.project.findMany({
+    const total = await this.prisma.project.count({ where });
+    const { skip, take } = getSkipTake(query);
+
+    const allowedSortFields = ['createdAt', 'name', 'status', 'eventDate', 'startDate', 'endDate'];
+    const sortField = allowedSortFields.includes(query.sort ?? '') ? query.sort! : 'createdAt';
+    const order = query.order ?? 'desc';
+
+    const data = await this.prisma.project.findMany({
       where,
       include: {
         client: { include: { company: true } },
         projectManager: { select: { id: true, name: true } },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { [sortField]: order },
+      skip,
+      take,
     });
+
+    return createPaginatedResponse(data, total, query);
   }
 
   async findOne(id: string, user: AuthUser) {
+    // Data finansial (quotation/invoice/payment) hanya untuk Sales/Finance/Direktur.
+    const financialVisible =
+      user.role === RoleUser.SALES ||
+      user.role === RoleUser.FINANCE ||
+      user.role === RoleUser.DIREKTUR;
+
     const project = await this.prisma.project.findUnique({
       where: { id },
       include: {
@@ -40,16 +58,24 @@ export class ProjectsService {
         members: { include: { user: { select: { id: true, name: true, role: true } } } },
         links: true,
         tasks: true,
-        quotations: { include: { items: true } },
-        invoices: { include: { items: true } },
-        payments: true,
-        // Data finansial disembunyikan dari role Produksi (SDD — UC05)
-        ...(user.role !== RoleUser.PRODUKSI && {
-          productionCosts: true,
+        ...(financialVisible && {
+          quotations: { include: { items: true } },
+          invoices: { include: { items: true } },
+          payments: true,
         }),
+        // Production cost terlihat oleh PM juga; hanya disembunyikan dari Produksi.
+        ...(user.role !== RoleUser.PRODUKSI && { productionCosts: true }),
       },
     });
     if (!project) throw new NotFoundException('Proyek tidak ditemukan.');
+
+    // Scoping akses (IDOR): PM hanya proyek yang ia kelola, Produksi hanya proyek anggota.
+    if (user.role === RoleUser.PROJECT_MANAGER && project.projectManagerId !== user.id) {
+      throw new ForbiddenException('Anda bukan Project Manager proyek ini.');
+    }
+    if (user.role === RoleUser.PRODUKSI && !project.members.some((m) => m.userId === user.id)) {
+      throw new ForbiddenException('Anda bukan anggota proyek ini.');
+    }
     return project;
   }
 
