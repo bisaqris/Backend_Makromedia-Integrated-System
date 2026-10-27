@@ -40,6 +40,14 @@ export class QuotationsController {
   @ApiNotFoundResponse(NotFoundResponse)
   findOne(@Param('id', ParseUUIDPipe) id: string) { return this.svc.findOne(id); }
 
+  @Get(':id/preview')
+  @Roles('SALES', 'FINANCE', 'DIREKTUR')
+  @ApiOperation({ summary: 'Data JSON lengkap untuk preview dokumen quotation' })
+  @ApiOkResponse({ description: 'Data preview quotation berhasil diambil.' })
+  @ApiUnauthorizedResponse(UnauthorizedResponse)
+  @ApiNotFoundResponse(NotFoundResponse)
+  preview(@Param('id', ParseUUIDPipe) id: string) { return this.svc.getPreview(id); }
+
   @Post()
   @Roles('SALES', 'FINANCE', 'DIREKTUR')
   @ApiOperation({ summary: 'Buat quotation baru' })

@@ -1,14 +1,18 @@
 import {
   BadRequestException, ForbiddenException, Injectable, NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Prisma, StatusQuotation } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
+import {
+  CompanyConfig, buildBillTo, buildIssuer, buildProjectInfo, mapDocumentItems,
+} from '../../common/documents/document-preview';
 import { CreateQuotationDto } from './dto/quotation.dto';
 
 @Injectable()
 export class QuotationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private config: ConfigService) {}
 
   findByProject(projectId: string) {
     return this.prisma.quotation.findMany({
@@ -20,6 +24,53 @@ export class QuotationsService {
     const q = await this.prisma.quotation.findUnique({ where: { id }, include: { items: true } });
     if (!q) throw new NotFoundException('Quotation tidak ditemukan.');
     return q;
+  }
+
+  /** Data JSON lengkap untuk preview dokumen quotation (dirender di FE). */
+  async getPreview(id: string) {
+    const q = await this.prisma.quotation.findUnique({
+      where: { id },
+      include: {
+        items: true,
+        createdBy: { select: { id: true, name: true, role: true } },
+        project: {
+          select: {
+            id: true, name: true, category: true, venue: true, eventDate: true,
+            client: {
+              select: {
+                name: true, email: true, phone: true, address: true,
+                company: { select: { name: true, email: true, phone: true, website: true, address: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!q) throw new NotFoundException('Quotation tidak ditemukan.');
+
+    const company = this.config.get<CompanyConfig>('company')!;
+    const discountAmount = new Prisma.Decimal(q.subtotal)
+      .mul(new Prisma.Decimal(q.discountPercent).div(100));
+
+    return {
+      documentType: 'QUOTATION' as const,
+      number: q.quotationNumber,
+      status: q.status,
+      date: q.createdAt,
+      notes: q.notes,
+      issuer: buildIssuer(company),
+      billTo: buildBillTo(q.project.client),
+      project: buildProjectInfo(q.project),
+      preparedBy: q.createdBy,
+      items: mapDocumentItems(q.items),
+      summary: {
+        subtotal: q.subtotal,
+        discountPercent: q.discountPercent,
+        discountAmount,
+        taxAmount: q.taxAmount,
+        totalValue: q.totalValue,
+      },
+    };
   }
 
   create(dto: CreateQuotationDto, user: AuthUser) {
