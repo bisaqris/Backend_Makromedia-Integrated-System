@@ -83,11 +83,26 @@ model User {
   passwordHash String   @map("password_hash")
   role         RoleUser
   isActive     Boolean  @default(true) @map("is_active")
+
+  // Data profil tambahan (dikonsumsi halaman Profile di FE)
+  dateOfBirth   DateTime? @map("date_of_birth") @db.Date
+  phone         String?   @db.VarChar(30)
+  province      String?   @db.VarChar(120)
+  city          String?   @db.VarChar(120)
+  subdistrict   String?   @db.VarChar(120) // kecamatan
+  village       String?   @db.VarChar(120) // kelurahan/desa
+  detailAddress String?   @map("detail_address")
+  bankName      String?   @map("bank_name") @db.VarChar(80)
+  bankAccountNo String?   @map("bank_account_no") @db.VarChar(40)
+  positionId    String?   @map("position_id") @db.Uuid
+
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
   tokenVersion Int      @default(0) @map("token_version") // dinaikkan saat ganti password (invalidasi token lama)
 
   // Relations
+  position         Position?         @relation(fields: [positionId], references: [id], onDelete: SetNull)
+  skills           UserSkill[]
   projectsCreated  Project[]         @relation("ProjectCreatedBy")
   projectsManaged  Project[]         @relation("ProjectManager")
   memberships      ProjectMember[]
@@ -98,6 +113,7 @@ model User {
   productionCosts  ProductionCost[]  @relation("CostCreatedBy")
   costApprovals    ProductionCost[]  @relation("CostApprovedBy")
 
+  @@index([positionId], map: "idx_user_position")
   @@map("users")
 }
 
@@ -111,6 +127,7 @@ model Position {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  users    User[]
   manpower Manpower[]
 
   @@map("positions")
@@ -192,8 +209,21 @@ model Skill {
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   manpower ManpowerSkill[]
+  users    UserSkill[]
 
   @@map("skills")
+}
+
+model UserSkill {
+  userId  String @map("user_id") @db.Uuid
+  skillId String @map("skill_id") @db.Uuid
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([userId, skillId])
+  @@index([skillId], map: "idx_user_skill_skill")
+  @@map("user_skills")
 }
 
 model ManpowerSkill {
