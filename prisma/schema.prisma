@@ -102,6 +102,21 @@ model User {
 }
 
 // ----------------------------------------------------------------------------
+//  POSITION / JABATAN (master data) — dipakai Manpower (dan User pada fitur profil)
+// ----------------------------------------------------------------------------
+
+model Position {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique @db.VarChar(80)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  manpower Manpower[]
+
+  @@map("positions")
+}
+
+// ----------------------------------------------------------------------------
 //  CLIENT (PIC) & COMPANY
 // ----------------------------------------------------------------------------
 
@@ -146,7 +161,8 @@ model Client {
 model Manpower {
   id               String    @id @default(uuid()) @db.Uuid
   name             String    @db.VarChar(120)
-  position         String?   @db.VarChar(80)
+  position         String?   @db.VarChar(80) // label jabatan (free-text, legacy)
+  positionId       String?   @map("position_id") @db.Uuid // referensi master Position
   email            String?   @db.VarChar(160)
   phone            String?   @db.VarChar(30)
   skill            String?   @db.VarChar(160)
@@ -158,8 +174,10 @@ model Manpower {
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  positionRef      Position?       @relation(fields: [positionId], references: [id], onDelete: SetNull)
   skills           ManpowerSkill[]
 
+  @@index([positionId], map: "idx_manpower_position")
   @@map("manpower")
 }
 
