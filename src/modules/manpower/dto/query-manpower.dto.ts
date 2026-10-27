@@ -16,4 +16,8 @@ export class QueryManpowerDto extends PaginationQueryDto {
   @IsOptional()
   @IsUUID()
   skillId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  positionId?: string;
 }
