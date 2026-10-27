@@ -19,6 +19,7 @@ import { UsersModule } from './modules/users/users.module';
 import { CompanyClientsModule } from './modules/company-clients/company-clients.module';
 import { ClientsModule } from './modules/clients/clients.module';
 import { ManpowerModule } from './modules/manpower/manpower.module';
+import { PositionsModule } from './modules/positions/positions.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { PaymentsModule } from './modules/payments/payments.module';
@@ -40,6 +41,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     CompanyClientsModule,
     ClientsModule,
     ManpowerModule,
+    PositionsModule,
     ProjectsModule,
     TasksModule,
     PaymentsModule,

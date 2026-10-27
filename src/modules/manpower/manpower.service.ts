@@ -13,6 +13,7 @@ export class ManpowerService {
     const where: Prisma.ManpowerWhereInput = {
       deletedAt: null,
       ...(query.employmentStatus && { employmentStatus: query.employmentStatus }),
+      ...(query.positionId && { positionId: query.positionId }),
       ...(query.skillId && {
         skills: {
           some: {
@@ -42,7 +43,7 @@ export class ManpowerService {
       orderBy: { [sortField]: order },
       skip,
       take,
-      include: { skills: { include: { skill: true } } },
+      include: { positionRef: true, skills: { include: { skill: true } } },
     });
 
     return createPaginatedResponse(data, total, query);
@@ -51,19 +52,21 @@ export class ManpowerService {
   async findOne(id: string) {
     const manpower = await this.prisma.manpower.findFirst({
       where: { id, deletedAt: null },
-      include: { skills: { include: { skill: true } } },
+      include: { positionRef: true, skills: { include: { skill: true } } },
     });
     if (!manpower) throw new NotFoundException('Manpower tidak ditemukan.');
     return manpower;
   }
 
-  create(dto: UpsertManpowerDto) {
-    return this.prisma.manpower.create({ data: dto });
+  async create(dto: UpsertManpowerDto) {
+    await this.ensurePositionExists(dto.positionId);
+    return this.prisma.manpower.create({ data: dto, include: { positionRef: true } });
   }
 
   async update(id: string, dto: UpsertManpowerDto) {
     await this.ensureExists(id);
-    return this.prisma.manpower.update({ where: { id }, data: dto });
+    await this.ensurePositionExists(dto.positionId);
+    return this.prisma.manpower.update({ where: { id }, data: dto, include: { positionRef: true } });
   }
 
   async remove(id: string) {
@@ -74,5 +77,14 @@ export class ManpowerService {
   private async ensureExists(id: string) {
     const f = await this.prisma.manpower.findFirst({ where: { id, deletedAt: null } });
     if (!f) throw new NotFoundException('Manpower tidak ditemukan.');
+  }
+
+  private async ensurePositionExists(positionId?: string) {
+    if (!positionId) return;
+    const position = await this.prisma.position.findUnique({
+      where: { id: positionId },
+      select: { id: true },
+    });
+    if (!position) throw new NotFoundException('Posisi/jabatan tidak ditemukan.');
   }
 }

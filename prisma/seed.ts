@@ -46,6 +46,7 @@ async function main() {
   await prisma.manpower.deleteMany();
   await prisma.client.deleteMany();
   await prisma.companyClient.deleteMany();
+  await prisma.position.deleteMany();
 
   // ---- Client company + PIC ------------------------------------------------
   const company = await prisma.companyClient.create({
@@ -66,6 +67,13 @@ async function main() {
     },
   });
 
+  // ---- Positions / Jabatan (master data) -----------------------------------
+  const [posVideographer, posCameraman] = await Promise.all(
+    ['Senior Videographer', 'Cameraman', 'Video Editor', 'Audio Engineer'].map((name) =>
+      prisma.position.create({ data: { name } }),
+    ),
+  );
+
   // ---- Skills (master data) ------------------------------------------------
   const [skVideo, skColor, skCinema, skAudio, skEditing] = await Promise.all(
     ['Videography', 'Color Grading', 'Cinematography', 'Audio Engineering', 'Editing'].map((name) =>
@@ -76,14 +84,16 @@ async function main() {
   // ---- Manpower (+ tautan skill many-to-many) ------------------------------
   await prisma.manpower.create({
     data: {
-      name: 'Andy Setiawan', position: 'Senior Videographer', skill: 'Videography, Color Grading',
+      name: 'Andy Setiawan', position: 'Senior Videographer', positionId: posVideographer.id,
+      skill: 'Videography, Color Grading',
       employmentStatus: 'FULLTIME', standardRate: '300000',
       skills: { create: [{ skillId: skVideo.id }, { skillId: skColor.id }, { skillId: skEditing.id }] },
     },
   });
   await prisma.manpower.create({
     data: {
-      name: 'Krismanegara', position: 'Cameraman', skill: 'Cinematography',
+      name: 'Krismanegara', position: 'Cameraman', positionId: posCameraman.id,
+      skill: 'Cinematography',
       employmentStatus: 'FREELANCE', standardRate: '100000',
       skills: { create: [{ skillId: skCinema.id }, { skillId: skAudio.id }] },
     },
