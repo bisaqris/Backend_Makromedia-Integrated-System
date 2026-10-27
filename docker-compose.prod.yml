@@ -1,0 +1,66 @@
+# ============================================================================
+#  Production stack - Makromedia Backend
+#  Postgres (internal) + API (sync skema + objek SQL, TANPA seed) + Cloudflare Tunnel.
+#
+#  Jalankan:
+#    docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+#
+#  Catatan:
+#  - Postgres TIDAK diekspos ke host/publik (hanya jaringan internal compose).
+#  - API tidak di-map ke port host; akses publik lewat Cloudflare Tunnel.
+#  - Tidak menjalankan seed dan tidak memakai --accept-data-loss (aman utk data).
+# ============================================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: makromedia_postgres_prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-makromedia}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD di .env}
+      POSTGRES_DB: ${POSTGRES_DB:-makromedia_db}
+    volumes:
+      - makromedia_pgdata_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-makromedia} -d ${POSTGRES_DB:-makromedia_db}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+    container_name: makromedia_api_prod
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-makromedia}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-makromedia_db}?schema=public
+      NODE_ENV: production
+      PORT: 4000
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET kuat di .env (min 16 char, bukan placeholder)}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
+      FRONTEND_URL: ${FRONTEND_URL}
+      COMPANY_NAME: ${COMPANY_NAME:-Makromedia}
+    # Produksi: sinkron skema (tanpa data-loss) + terapkan objek SQL, TANPA seed.
+    command: >
+      sh -c "pnpm prisma db push &&
+             pnpm db:objects &&
+             node dist/main.js"
+    expose:
+      - '4000'
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: makromedia_cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?set CLOUDFLARE_TUNNEL_TOKEN di .env}
+    depends_on:
+      - api
+
+volumes:
+  makromedia_pgdata_prod:
