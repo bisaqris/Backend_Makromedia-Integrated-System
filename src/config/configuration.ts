@@ -13,4 +13,15 @@ export default () => ({
       .map((o) => o.trim())
       .filter(Boolean),
   },
+  // Identitas perusahaan penerbit (dipakai sebagai header pada preview quotation/invoice).
+  company: {
+    name: process.env.COMPANY_NAME ?? 'Makromedia',
+    address: process.env.COMPANY_ADDRESS ?? 'Malang, Jawa Timur, Indonesia',
+    phone: process.env.COMPANY_PHONE ?? '',
+    email: process.env.COMPANY_EMAIL ?? '',
+    website: process.env.COMPANY_WEBSITE ?? '',
+    bankName: process.env.COMPANY_BANK_NAME ?? '',
+    bankAccountNo: process.env.COMPANY_BANK_ACCOUNT_NO ?? '',
+    bankAccountName: process.env.COMPANY_BANK_ACCOUNT_NAME ?? '',
+  },
 });
