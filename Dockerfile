@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
-# ---- Base: Node 20 + pnpm ----
-FROM node:20-alpine AS base
+# ---- Base: Node 22 + pnpm (pnpm 11.21 butuh Node >= 22.13; selaras dgn CI) ----
+FROM node:22-alpine AS base
 RUN corepack enable && corepack prepare pnpm@11.21.0 --activate
 WORKDIR /app
 
