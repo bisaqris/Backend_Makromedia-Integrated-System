@@ -39,12 +39,13 @@ export class AuthController {
     return this.auth.login(dto);
   }
 
+  @ApiBearerAuth()
   @Get('me')
-  @ApiOperation({ summary: 'Ambil data user yang sedang login' })
-  @ApiOkResponse({ description: 'Data user saat ini berhasil diambil.' })
+  @ApiOperation({ summary: 'Ambil profil lengkap user yang sedang login' })
+  @ApiOkResponse({ description: 'Data profil user saat ini berhasil diambil.' })
   @ApiUnauthorizedResponse(UnauthorizedResponse)
   me(@CurrentUser() user: AuthUser) {
-    return user;
+    return this.auth.getProfile(user.id);
   }
 
   @ApiBearerAuth()

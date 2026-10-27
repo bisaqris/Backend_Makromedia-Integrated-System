@@ -42,6 +42,7 @@ async function main() {
   await prisma.projectProgress.deleteMany();
   await prisma.project.deleteMany();
   await prisma.manpowerSkill.deleteMany();
+  await prisma.userSkill.deleteMany();
   await prisma.skill.deleteMany();
   await prisma.manpower.deleteMany();
   await prisma.client.deleteMany();
