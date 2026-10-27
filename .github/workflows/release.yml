@@ -1,0 +1,74 @@
+name: Release
+
+# Dipicu saat tag versi di-push (mis. v1.2.0) sesuai alur GitFlow:
+# release/x.y.z -> main -> tag vX.Y.Z -> pipeline ini build & publish image.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/bisaqris/backend_makromedia-integrated-system
+
+jobs:
+  docker-image:
+    name: Build & publish Docker image (GHCR)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata (tags & labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-production:
+    name: Deploy to production
+    needs: docker-image
+    runs-on: ubuntu-latest
+    # Gate manual via GitHub Environment "production" (atur required reviewers di
+    # Settings > Environments). Job ini inert sampai variable & secrets diisi,
+    # jadi tidak akan gagal bila host belum dikonfigurasi.
+    environment: production
+    if: ${{ vars.PRODUCTION_DEPLOY_ENABLED == 'true' }}
+    steps:
+      - name: Deploy over SSH (docker compose pull & up)
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd ${{ secrets.PROD_APP_DIR }}
+            docker compose pull
+            docker compose up -d
+            docker image prune -f
