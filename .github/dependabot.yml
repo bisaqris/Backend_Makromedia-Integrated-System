@@ -1,0 +1,33 @@
+version: 2
+updates:
+  # Dependency aplikasi (pnpm terdeteksi via ekosistem npm)
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    labels: ["dependencies"]
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      # Kurangi noise: kelompokkan update patch/minor non-major jadi satu PR
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+
+  # Action di GitHub Actions workflows
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    labels: ["ci"]
+    commit-message:
+      prefix: "chore(ci)"
+
+  # Base image pada Dockerfile
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly
+    labels: ["docker"]
+    commit-message:
+      prefix: "chore(docker)"

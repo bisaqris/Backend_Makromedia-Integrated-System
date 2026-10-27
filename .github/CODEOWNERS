@@ -1,0 +1,10 @@
+# Code owners - otomatis diminta review saat PR menyentuh path terkait.
+# Lihat: https://docs.github.com/articles/about-code-owners
+
+# Default: seluruh repo
+*                 @hum4id
+
+# Area sensitif: butuh perhatian ekstra
+/prisma/          @hum4id
+/.github/         @hum4id
+/src/common/      @hum4id
