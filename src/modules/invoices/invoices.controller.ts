@@ -43,6 +43,14 @@ export class InvoicesController {
   @ApiNotFoundResponse(NotFoundResponse)
   findOne(@Param('id', ParseUUIDPipe) id: string) { return this.svc.findOne(id); }
 
+  @Get(':id/preview')
+  @Roles('SALES', 'FINANCE', 'DIREKTUR')
+  @ApiOperation({ summary: 'Data JSON lengkap untuk preview dokumen invoice' })
+  @ApiOkResponse({ description: 'Data preview invoice berhasil diambil.' })
+  @ApiUnauthorizedResponse(UnauthorizedResponse)
+  @ApiNotFoundResponse(NotFoundResponse)
+  preview(@Param('id', ParseUUIDPipe) id: string) { return this.svc.getPreview(id); }
+
   @Post()
   @Roles('FINANCE', 'DIREKTUR')
   @ApiOperation({ summary: 'Buat invoice baru' })
