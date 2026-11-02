@@ -16,13 +16,16 @@ export class UpdateProfileDto {
   // Data profil tambahan (dipakai halaman Profile di FE)
   @IsOptional() @IsDateString() dateOfBirth?: string;
   @IsOptional() @IsString() phone?: string;
+  @IsOptional() @IsString() country?: string;
   @IsOptional() @IsString() province?: string;
   @IsOptional() @IsString() city?: string;
   @IsOptional() @IsString() subdistrict?: string;
   @IsOptional() @IsString() village?: string;
+  @IsOptional() @IsString() postalCode?: string;
   @IsOptional() @IsString() detailAddress?: string;
   @IsOptional() @IsString() bankName?: string;
   @IsOptional() @IsString() bankAccountNo?: string;
+  @IsOptional() @IsString() accountHolder?: string;
 
   // Posisi/jabatan (referensi master Position)
   @IsOptional() @IsUUID() positionId?: string;

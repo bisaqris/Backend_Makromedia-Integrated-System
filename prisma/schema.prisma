@@ -92,13 +92,16 @@ model User {
   // Data profil tambahan (dikonsumsi halaman Profile di FE)
   dateOfBirth   DateTime? @map("date_of_birth") @db.Date
   phone         String?   @db.VarChar(30)
+  country       String?   @db.VarChar(80)
   province      String?   @db.VarChar(120)
   city          String?   @db.VarChar(120)
   subdistrict   String?   @db.VarChar(120) // kecamatan
   village       String?   @db.VarChar(120) // kelurahan/desa
+  postalCode    String?   @map("postal_code") @db.VarChar(20)
   detailAddress String?   @map("detail_address")
   bankName      String?   @map("bank_name") @db.VarChar(80)
   bankAccountNo String?   @map("bank_account_no") @db.VarChar(40)
+  accountHolder String?   @map("account_holder") @db.VarChar(120) // nama pemilik rekening
   positionId    String?   @map("position_id") @db.Uuid
 
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -169,6 +172,12 @@ model CompanyClient {
   phone     String?  @db.VarChar(30)
   website   String?  @db.VarChar(160)
   address   String?
+  country     String?  @db.VarChar(80)
+  province    String?  @db.VarChar(120)
+  city        String?  @db.VarChar(120)
+  subdistrict String?  @db.VarChar(120) // kecamatan
+  village     String?  @db.VarChar(120) // kelurahan/desa
+  postalCode  String?  @map("postal_code") @db.VarChar(20)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6) // soft delete
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -185,6 +194,12 @@ model Client {
   email           String?  @db.VarChar(160)
   phone           String?  @db.VarChar(30)
   address         String?
+  country         String?  @db.VarChar(80)
+  province        String?  @db.VarChar(120)
+  city            String?  @db.VarChar(120)
+  subdistrict     String?  @db.VarChar(120) // kecamatan
+  village         String?  @db.VarChar(120) // kelurahan/desa
+  postalCode      String?  @map("postal_code") @db.VarChar(20)
   deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(6) // soft delete
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)

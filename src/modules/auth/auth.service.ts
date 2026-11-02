@@ -19,13 +19,16 @@ const safeUser = {
   isActive: true,
   dateOfBirth: true,
   phone: true,
+  country: true,
   province: true,
   city: true,
   subdistrict: true,
   village: true,
+  postalCode: true,
   detailAddress: true,
   bankName: true,
   bankAccountNo: true,
+  accountHolder: true,
   position: { select: { id: true, name: true } },
   skills: { select: { skill: { select: { id: true, name: true } } } },
   createdAt: true,
@@ -162,13 +165,16 @@ export class AuthService {
       // undefined = tidak diubah; null = dikosongkan; string = diset.
       dateOfBirth: dto.dateOfBirth == null ? dto.dateOfBirth : new Date(dto.dateOfBirth),
       phone: dto.phone,
+      country: dto.country,
       province: dto.province,
       city: dto.city,
       subdistrict: dto.subdistrict,
       village: dto.village,
+      postalCode: dto.postalCode,
       detailAddress: dto.detailAddress,
       bankName: dto.bankName,
       bankAccountNo: dto.bankAccountNo,
+      accountHolder: dto.accountHolder,
       positionId: dto.positionId, // scalar FK: aman untuk set/clear (SetNull)
     };
 
