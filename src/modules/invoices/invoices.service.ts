@@ -6,11 +6,45 @@ import { AuthUser } from '../../common/decorators/current-user.decorator';
 import {
   CompanyConfig, buildBillTo, buildIssuer, buildProjectInfo, mapDocumentItems,
 } from '../../common/documents/document-preview';
+import { getSkipTake, createPaginatedResponse } from '../../common/pagination/pagination.helper';
 import { CreateInvoiceDto } from './dto/invoice.dto';
+import { QueryInvoiceDto } from './dto/query-invoice.dto';
 
 @Injectable()
 export class InvoicesService {
   constructor(private prisma: PrismaService, private config: ConfigService) {}
+
+  /** Daftar seluruh invoice (lintas proyek) dengan filter & pagination. */
+  async findAll(query: QueryInvoiceDto) {
+    const where: Prisma.InvoiceWhereInput = {
+      ...(query.status && { status: query.status }),
+      ...(query.projectId && { projectId: query.projectId }),
+      ...(query.search && {
+        invoiceNumber: { contains: query.search, mode: 'insensitive' },
+      }),
+    };
+
+    const total = await this.prisma.invoice.count({ where });
+    const { skip, take } = getSkipTake(query);
+
+    const allowedSortFields = ['createdAt', 'invoiceNumber', 'amount', 'status', 'dueDate'];
+    const sortField = allowedSortFields.includes(query.sort ?? '') ? query.sort! : 'createdAt';
+    const order = query.order ?? 'desc';
+
+    const data = await this.prisma.invoice.findMany({
+      where,
+      include: {
+        items: true,
+        project: { select: { id: true, name: true } },
+        quotation: { select: { id: true, quotationNumber: true } },
+      },
+      orderBy: { [sortField]: order },
+      skip,
+      take,
+    });
+
+    return createPaginatedResponse(data, total, query);
+  }
 
   findByProject(projectId: string) {
     return this.prisma.invoice.findMany({

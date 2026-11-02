@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -18,12 +18,21 @@ import {
 } from '../../common/swagger/api-response.schema';
 import { QuotationsService } from './quotations.service';
 import { CreateQuotationDto, UpdateQuotationStatusDto } from './dto/quotation.dto';
+import { QueryQuotationDto } from './dto/query-quotation.dto';
 
 @ApiTags('quotations')
 @ApiBearerAuth()
 @Controller('quotations')
 export class QuotationsController {
   constructor(private svc: QuotationsService) {}
+
+  @Get()
+  @Roles('SALES', 'FINANCE', 'DIREKTUR')
+  @ApiOperation({ summary: 'Ambil seluruh quotation (lintas proyek) dengan filter & pagination' })
+  @ApiOkResponse({ description: 'Daftar quotation berhasil diambil.' })
+  @ApiUnauthorizedResponse(UnauthorizedResponse)
+  findAll(@Query() query: QueryQuotationDto) { return this.svc.findAll(query); }
+
   @Get('project/:projectId')
   @Roles('SALES', 'FINANCE', 'DIREKTUR')
   @ApiOperation({ summary: 'Ambil daftar quotation berdasarkan proyek' })

@@ -6,11 +6,20 @@ describe('AuthService', () => {
   let service: AuthService;
   let prisma: any;
   let jwt: any;
+  let config: any;
 
   beforeEach(() => {
-    prisma = { user: { findUnique: jest.fn(), update: jest.fn() } };
+    prisma = {
+      user: { findUnique: jest.fn(), update: jest.fn() },
+      refreshToken: {
+        create: jest.fn().mockResolvedValue({ id: 'rt1' }),
+        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      },
+      $transaction: jest.fn().mockResolvedValue([{}, {}]),
+    };
     jwt = { signAsync: jest.fn().mockResolvedValue('token123') };
-    service = new AuthService(prisma, jwt);
+    config = { get: jest.fn().mockReturnValue(7) };
+    service = new AuthService(prisma, jwt, config);
   });
 
   describe('login', () => {
