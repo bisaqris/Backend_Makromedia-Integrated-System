@@ -1,9 +1,11 @@
 import {
   BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Prisma } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto, UpdateProfileDto } from './dto/profile.dto';
@@ -33,7 +35,11 @@ const BCRYPT_ROUNDS = 12;
 
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService, private jwt: JwtService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwt: JwtService,
+    private config: ConfigService,
+  ) {}
 
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
@@ -42,13 +48,80 @@ export class AuthService {
     }
     if (!user.isActive) throw new UnauthorizedException('Akun tidak aktif.');
 
-    const token = await this.jwt.signAsync({
+    return this.issueTokens(user);
+  }
+
+  /**
+   * Refresh token rotation: tukar refresh token lama dengan sepasang token baru.
+   * Deteksi pemakaian ulang (token sudah dicabut) => cabut semua sesi user (indikasi pencurian).
+   */
+  async refresh(rawToken: string) {
+    const tokenHash = this.hashToken(rawToken);
+    const stored = await this.prisma.refreshToken.findUnique({ where: { tokenHash } });
+    if (!stored) throw new UnauthorizedException('Refresh token tidak valid.');
+
+    if (stored.revokedAt) {
+      // Token yang sudah dirotasi dipakai lagi => kemungkinan dicuri. Cabut semua.
+      await this.revokeAllForUser(stored.userId);
+      throw new UnauthorizedException('Refresh token sudah tidak berlaku (sesi dicabut).');
+    }
+    if (stored.expiresAt < new Date()) {
+      throw new UnauthorizedException('Refresh token kedaluwarsa.');
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: stored.userId } });
+    if (!user || !user.isActive) throw new UnauthorizedException('Akun tidak aktif.');
+
+    const tokens = await this.issueTokens(user);
+    // Tandai token lama sebagai dicabut & tautkan ke penggantinya (rantai rotasi).
+    await this.prisma.refreshToken.update({
+      where: { id: stored.id },
+      data: { revokedAt: new Date(), replacedById: tokens.refreshTokenId },
+    });
+    return { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken, user: tokens.user };
+  }
+
+  /** Logout: cabut satu refresh token (idempoten). */
+  async logout(rawToken: string) {
+    const tokenHash = this.hashToken(rawToken);
+    await this.prisma.refreshToken.updateMany({
+      where: { tokenHash, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    return { message: 'Logout berhasil.' };
+  }
+
+  /** Terbitkan access token (JWT) + refresh token (opaque, disimpan ter-hash). */
+  private async issueTokens(user: User) {
+    const accessToken = await this.jwt.signAsync({
       sub: user.id, email: user.email, role: user.role, tv: user.tokenVersion,
     });
+
+    const rawRefresh = crypto.randomBytes(48).toString('base64url');
+    const ttlDays = this.config.get<number>('jwt.refreshTtlDays') ?? 7;
+    const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000);
+    const created = await this.prisma.refreshToken.create({
+      data: { userId: user.id, tokenHash: this.hashToken(rawRefresh), expiresAt },
+      select: { id: true },
+    });
+
     return {
-      accessToken: token,
+      accessToken,
+      refreshToken: rawRefresh,
+      refreshTokenId: created.id,
       user: { id: user.id, name: user.name, email: user.email, role: user.role },
     };
+  }
+
+  private hashToken(raw: string) {
+    return crypto.createHash('sha256').update(raw).digest('hex');
+  }
+
+  private revokeAllForUser(userId: string) {
+    return this.prisma.refreshToken.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
   }
 
   /** Ambil profil lengkap user yang sedang login (tanpa passwordHash). */
@@ -123,11 +196,17 @@ export class AuthService {
       throw new BadRequestException('Password lama tidak sesuai.');
     }
     const passwordHash = await bcrypt.hash(dto.newPassword, BCRYPT_ROUNDS);
-    // Naikkan tokenVersion agar seluruh token lama (JWT sebelum ganti password) invalid.
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { passwordHash, tokenVersion: { increment: 1 } },
-    });
+    // Naikkan tokenVersion agar seluruh JWT lama invalid, dan cabut semua refresh token.
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { passwordHash, tokenVersion: { increment: 1 } },
+      }),
+      this.prisma.refreshToken.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+    ]);
     return { message: 'Password berhasil diperbarui.' };
   }
 }
