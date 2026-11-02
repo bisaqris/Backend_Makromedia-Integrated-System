@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -20,12 +20,21 @@ import {
 } from '../../common/swagger/api-response.schema';
 import { InvoicesService } from './invoices.service';
 import { CreateInvoiceDto } from './dto/invoice.dto';
+import { QueryInvoiceDto } from './dto/query-invoice.dto';
 
 @ApiTags('invoices')
 @ApiBearerAuth()
 @Controller('invoices')
 export class InvoicesController {
   constructor(private svc: InvoicesService) {}
+
+  @Get()
+  @Roles('SALES', 'FINANCE', 'DIREKTUR')
+  @ApiOperation({ summary: 'Ambil seluruh invoice (lintas proyek) dengan filter & pagination' })
+  @ApiOkResponse({ description: 'Daftar invoice berhasil diambil.' })
+  @ApiUnauthorizedResponse(UnauthorizedResponse)
+  findAll(@Query() query: QueryInvoiceDto) { return this.svc.findAll(query); }
+
   @Get('project/:projectId')
   @Roles('SALES', 'FINANCE', 'DIREKTUR')
   @ApiOperation({ summary: 'Ambil daftar invoice berdasarkan proyek' })

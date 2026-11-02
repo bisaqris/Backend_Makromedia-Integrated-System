@@ -8,11 +8,41 @@ import { AuthUser } from '../../common/decorators/current-user.decorator';
 import {
   CompanyConfig, buildBillTo, buildIssuer, buildProjectInfo, mapDocumentItems,
 } from '../../common/documents/document-preview';
+import { getSkipTake, createPaginatedResponse } from '../../common/pagination/pagination.helper';
 import { CreateQuotationDto } from './dto/quotation.dto';
+import { QueryQuotationDto } from './dto/query-quotation.dto';
 
 @Injectable()
 export class QuotationsService {
   constructor(private prisma: PrismaService, private config: ConfigService) {}
+
+  /** Daftar seluruh quotation (lintas proyek) dengan filter & pagination. */
+  async findAll(query: QueryQuotationDto) {
+    const where: Prisma.QuotationWhereInput = {
+      ...(query.status && { status: query.status }),
+      ...(query.projectId && { projectId: query.projectId }),
+      ...(query.search && {
+        quotationNumber: { contains: query.search, mode: 'insensitive' },
+      }),
+    };
+
+    const total = await this.prisma.quotation.count({ where });
+    const { skip, take } = getSkipTake(query);
+
+    const allowedSortFields = ['createdAt', 'quotationNumber', 'totalValue', 'status'];
+    const sortField = allowedSortFields.includes(query.sort ?? '') ? query.sort! : 'createdAt';
+    const order = query.order ?? 'desc';
+
+    const data = await this.prisma.quotation.findMany({
+      where,
+      include: { items: true, project: { select: { id: true, name: true } } },
+      orderBy: { [sortField]: order },
+      skip,
+      take,
+    });
+
+    return createPaginatedResponse(data, total, query);
+  }
 
   findByProject(projectId: string) {
     return this.prisma.quotation.findMany({
