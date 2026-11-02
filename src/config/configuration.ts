@@ -5,6 +5,9 @@ export default () => ({
     // Secret divalidasi & dijamin ada oleh validateEnv (tanpa default tidak aman).
     secret: process.env.JWT_SECRET,
     expiresIn: process.env.JWT_EXPIRES_IN ?? '1d',
+    // Masa berlaku refresh token (hari). Access token sebaiknya dipersingkat
+    // (mis. JWT_EXPIRES_IN=15m) saat memakai refresh token.
+    refreshTtlDays: parseInt(process.env.REFRESH_TOKEN_TTL_DAYS ?? '7', 10),
   },
   cors: {
     // Daftar origin yang diizinkan (comma-separated), default ke frontend lokal.

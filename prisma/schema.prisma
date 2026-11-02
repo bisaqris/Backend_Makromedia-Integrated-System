@@ -112,9 +112,29 @@ model User {
   invoices         Invoice[]
   productionCosts  ProductionCost[]  @relation("CostCreatedBy")
   costApprovals    ProductionCost[]  @relation("CostApprovedBy")
+  refreshTokens    RefreshToken[]
 
   @@index([positionId], map: "idx_user_position")
   @@map("users")
+}
+
+// ----------------------------------------------------------------------------
+//  REFRESH TOKEN (rotating, disimpan ter-hash, bisa dicabut per-sesi)
+// ----------------------------------------------------------------------------
+
+model RefreshToken {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  tokenHash    String    @unique @map("token_hash") // SHA-256 dari token mentah (raw tidak pernah disimpan)
+  expiresAt    DateTime  @map("expires_at") @db.Timestamptz(6)
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz(6)
+  replacedById String?   @map("replaced_by") @db.Uuid // id token pengganti (rantai rotasi)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_refresh_token_user")
+  @@map("refresh_tokens")
 }
 
 // ----------------------------------------------------------------------------
