@@ -33,6 +33,12 @@ export class LoginResponseDto {
    */
   accessToken: string;
 
+  /**
+   * Refresh token (opaque) untuk menukar access token baru via POST /auth/refresh
+   * @example 3Qq8Zr-base64url-string
+   */
+  refreshToken: string;
+
   /** Data pengguna yang berhasil login */
   user: AuthUserDto;
 }

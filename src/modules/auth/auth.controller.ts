@@ -20,6 +20,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
 import { ChangePasswordDto, UpdateProfileDto } from './dto/profile.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 
 @ApiTags('auth')
 @ApiExtraModels(SuccessEnvelopeDto, LoginResponseDto)
@@ -37,6 +38,27 @@ export class AuthController {
   @ApiUnauthorizedResponse(UnauthorizedResponse)
   login(@Body() dto: LoginDto) {
     return this.auth.login(dto);
+  }
+
+  // Rotasi refresh token: tukar refresh token lama dengan sepasang token baru.
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @Public()
+  @Post('refresh')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Tukar refresh token dengan access & refresh token baru (rotasi)' })
+  @ApiOkResponse({ description: 'Token berhasil diperbarui.' })
+  @ApiUnauthorizedResponse(UnauthorizedResponse)
+  refresh(@Body() dto: RefreshTokenDto) {
+    return this.auth.refresh(dto.refreshToken);
+  }
+
+  @Public()
+  @Post('logout')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Logout: cabut refresh token' })
+  @ApiOkResponse({ description: 'Logout berhasil.' })
+  logout(@Body() dto: RefreshTokenDto) {
+    return this.auth.logout(dto.refreshToken);
   }
 
   @ApiBearerAuth()
