@@ -72,6 +72,11 @@ enum KategoriProyek {
   OTHER
 }
 
+enum Gender {
+  MALE
+  FEMALE
+}
+
 // ----------------------------------------------------------------------------
 //  USER & ACCESS
 // ----------------------------------------------------------------------------
@@ -204,8 +209,16 @@ model Manpower {
   phone            String?   @db.VarChar(30)
   skill            String?   @db.VarChar(160)
   employmentStatus String?   @map("employment_status") @db.VarChar(30) // FULLTIME/PART_TIME/FREELANCE/INTERNSHIP
+  gender           Gender?
+  dateOfBirth      DateTime? @map("date_of_birth") @db.Date
+  province         String?   @db.VarChar(120)
+  city             String?   @db.VarChar(120)
+  subdistrict      String?   @db.VarChar(120) // kecamatan
+  village          String?   @db.VarChar(120) // kelurahan/desa
+  detailAddress    String?   @map("detail_address")
   bankName         String?   @map("bank_name") @db.VarChar(80)
   bankAccountNo    String?   @map("bank_account_no") @db.VarChar(40)
+  accountHolder    String?   @map("account_holder") @db.VarChar(120) // nama pemilik rekening
   standardRate     Decimal?  @map("standard_rate") @db.Decimal(15, 2)
   deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(6) // soft delete
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
