@@ -57,6 +57,10 @@ export class ProjectsService {
         projectManager: { select: { id: true, name: true } },
         members: { include: { user: { select: { id: true, name: true, role: true } } } },
         links: true,
+        progress: {
+          orderBy: { createdAt: 'desc' },
+          include: { createdBy: { select: { id: true, name: true, role: true } } },
+        },
         tasks: true,
         ...(financialVisible && {
           quotations: { include: { items: true } },
