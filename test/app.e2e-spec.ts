@@ -24,8 +24,8 @@ describe('Auth & RBAC (e2e)', () => {
     await app.close();
   });
 
-  it('GET /api/health -> 200 (public)', () =>
-    request(app.getHttpServer()).get('/api/health').expect(200));
+  it('GET /api/v1/health -> 200 (public)', () =>
+    request(app.getHttpServer()).get('/api/v1/health').expect(200));
 
   it('POST /api/v1/auth/login (sales) -> 200 + accessToken', async () => {
     const res = await request(app.getHttpServer())

@@ -1,11 +1,10 @@
-import { Controller, Get, VERSION_NEUTRAL } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Public } from '../common/decorators/public.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 
-// Endpoint operasional: tidak di-versioning, tetap di /api/health.
 @ApiTags('health')
-@Controller({ path: 'health', version: VERSION_NEUTRAL })
+@Controller('health')
 export class HealthController {
   constructor(private prisma: PrismaService) {}
 
