@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe, Logger, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
@@ -12,6 +12,11 @@ async function bootstrap() {
   const isProd = config.get<string>('nodeEnv') === 'production';
 
   app.setGlobalPrefix('api');
+
+  // Versioning URI: seluruh rute menjadi /api/v1/... (default v1).
+  // Controller dapat memakai @Version('2') saat butuh v2 tanpa membongkar v1.
+  // Endpoint operasional (health) dibuat VERSION_NEUTRAL => tetap di /api/health.
+  app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
 
   // Security & performance middleware.
   // CSP dimatikan di non-production agar Swagger UI tetap berjalan.
