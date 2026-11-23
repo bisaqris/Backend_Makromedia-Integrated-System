@@ -158,6 +158,12 @@ export class AuthService {
     return this.getProfile(userId);
   }
 
+  /** Hapus foto profil user (set avatarUrl ke null). */
+  async removeAvatar(userId: string) {
+    await this.prisma.user.update({ where: { id: userId }, data: { avatarUrl: null } });
+    return this.getProfile(userId);
+  }
+
   /** Update profil milik sendiri. passwordHash tidak pernah dikembalikan. */
   async updateProfile(userId: string, dto: UpdateProfileDto) {
     if (dto.email) {
