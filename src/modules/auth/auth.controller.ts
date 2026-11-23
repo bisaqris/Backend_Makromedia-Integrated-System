@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Patch,
@@ -106,6 +107,15 @@ export class AuthController {
   @ApiUnauthorizedResponse(UnauthorizedResponse)
   uploadAvatar(@CurrentUser() user: AuthUser, @UploadedFile() file: Express.Multer.File) {
     return this.auth.setAvatar(user.id, file);
+  }
+
+  @ApiBearerAuth()
+  @Delete('me/avatar')
+  @ApiOperation({ summary: 'Hapus foto profil user saat ini' })
+  @ApiOkResponse({ description: 'Foto profil berhasil dihapus; mengembalikan profil terbaru.' })
+  @ApiUnauthorizedResponse(UnauthorizedResponse)
+  removeAvatar(@CurrentUser() user: AuthUser) {
+    return this.auth.removeAvatar(user.id);
   }
 
   @ApiBearerAuth()
