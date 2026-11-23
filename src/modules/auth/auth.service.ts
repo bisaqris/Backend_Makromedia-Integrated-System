@@ -6,6 +6,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Prisma, User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
+import { Jimp, JimpMime } from 'jimp';
 import { PrismaService } from '../../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto, UpdateProfileDto } from './dto/profile.dto';
@@ -17,6 +18,7 @@ const safeUser = {
   email: true,
   role: true,
   isActive: true,
+  avatarUrl: true,
   dateOfBirth: true,
   phone: true,
   country: true,
@@ -132,6 +134,28 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { id: userId }, select: safeUser });
     if (!user) throw new NotFoundException('User tidak ditemukan.');
     return user;
+  }
+
+  /**
+   * Set foto profil dari file terupload. Gambar di-kompres (resize 256x256 + JPEG
+   * kualitas 70) lalu di-encode ke data URL base64 dan disimpan sebagai string di
+   * DB (tanpa file di disk). FE memakainya langsung sebagai `<img src={avatarUrl}>`.
+   */
+  async setAvatar(userId: string, file?: Express.Multer.File) {
+    if (!file) throw new BadRequestException('File foto tidak ditemukan.');
+
+    let avatarUrl: string;
+    try {
+      const image = await Jimp.read(file.buffer);
+      image.cover({ w: 256, h: 256 }); // kompres: crop persegi 256x256
+      const compressed = await image.getBuffer(JimpMime.jpeg, { quality: 70 });
+      avatarUrl = `data:${JimpMime.jpeg};base64,${compressed.toString('base64')}`;
+    } catch {
+      throw new BadRequestException('Gambar tidak valid atau gagal diproses.');
+    }
+
+    await this.prisma.user.update({ where: { id: userId }, data: { avatarUrl } });
+    return this.getProfile(userId);
   }
 
   /** Update profil milik sendiri. passwordHash tidak pernah dikembalikan. */

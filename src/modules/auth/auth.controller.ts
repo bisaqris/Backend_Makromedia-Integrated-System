@@ -1,6 +1,19 @@
-import { Body, Controller, Get, HttpCode, Patch, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Patch,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
   ApiExtraModels,
   ApiOkResponse,
   ApiOperation,
@@ -9,6 +22,7 @@ import {
   getSchemaPath,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { memoryStorage } from 'multer';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser, AuthUser } from '../../common/decorators/current-user.decorator';
 import {
@@ -68,6 +82,30 @@ export class AuthController {
   @ApiUnauthorizedResponse(UnauthorizedResponse)
   me(@CurrentUser() user: AuthUser) {
     return this.auth.getProfile(user.id);
+  }
+
+  @ApiBearerAuth()
+  @Patch('me/avatar')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(), // file ditahan di memori lalu di-encode base64, tanpa disk
+      limits: { fileSize: 2 * 1024 * 1024 }, // maks 2 MB
+      fileFilter: (_req, file, cb) => {
+        if (!/^image\/(jpeg|png|webp|gif)$/.test(file.mimetype)) {
+          cb(new BadRequestException('File harus gambar (jpeg/png/webp/gif).'), false);
+          return;
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
+  @ApiOperation({ summary: 'Upload / ganti foto profil user saat ini (field: file)' })
+  @ApiOkResponse({ description: 'Foto profil berhasil diperbarui; mengembalikan profil terbaru.' })
+  @ApiUnauthorizedResponse(UnauthorizedResponse)
+  uploadAvatar(@CurrentUser() user: AuthUser, @UploadedFile() file: Express.Multer.File) {
+    return this.auth.setAvatar(user.id, file);
   }
 
   @ApiBearerAuth()

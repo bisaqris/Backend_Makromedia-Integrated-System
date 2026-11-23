@@ -88,6 +88,7 @@ model User {
   passwordHash String   @map("password_hash")
   role         RoleUser
   isActive     Boolean  @default(true) @map("is_active")
+  avatarUrl    String?  @map("avatar_url") @db.Text // foto profil sebagai data URL base64 (data:image/...;base64,...)
 
   // Data profil tambahan (dikonsumsi halaman Profile di FE)
   dateOfBirth   DateTime? @map("date_of_birth") @db.Date
