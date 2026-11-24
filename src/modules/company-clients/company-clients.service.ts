@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UpsertCompanyClientDto } from './dto/company-client.dto';
 
@@ -19,6 +19,16 @@ export class CompanyClientsService {
   }
   async remove(id: string) {
     await this.ensure(id);
+    // Proteksi relasi: jangan hapus perusahaan selama masih ada data client aktif
+    // yang terhubung, agar data client tidak kehilangan referensi perusahaannya.
+    const activeClients = await this.prisma.client.count({
+      where: { companyClientId: id, deletedAt: null },
+    });
+    if (activeClients > 0) {
+      throw new ConflictException(
+        `Tidak dapat menghapus perusahaan: masih ada ${activeClients} data client yang terhubung. Hapus atau pindahkan data client tersebut lebih dahulu.`,
+      );
+    }
     return this.prisma.companyClient.update({ where: { id }, data: { deletedAt: new Date() } });
   }
   private async ensure(id: string) {
