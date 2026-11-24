@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { StatusTask } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
@@ -23,6 +23,7 @@ export class TasksService {
 
   async create(projectId: string, dto: CreateTaskDto, user: AuthUser) {
     await this.access.assertCanAccess(projectId, user);
+    await this.assertDueDateAfterProjectStart(projectId, dto.dueDate);
     return this.prisma.task.create({
       data: {
         projectId,
@@ -41,6 +42,7 @@ export class TasksService {
   async update(id: string, dto: UpdateTaskDto, user: AuthUser) {
     const task = await this.get(id);
     await this.access.assertCanAccess(task.projectId, user);
+    await this.assertDueDateAfterProjectStart(task.projectId, dto.dueDate);
     return this.prisma.task.update({
       where: { id },
       data: {
@@ -92,5 +94,22 @@ export class TasksService {
     const task = await this.prisma.task.findUnique({ where: { id } });
     if (!task) throw new NotFoundException('Task tidak ditemukan.');
     return task;
+  }
+
+  /**
+   * Batas waktu (due date) task tidak boleh lebih awal dari tanggal mulai proyek.
+   * Dilewati jika due date atau tanggal mulai proyek tidak terisi.
+   */
+  private async assertDueDateAfterProjectStart(projectId: string, dueDate?: string) {
+    if (!dueDate) return;
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: { startDate: true },
+    });
+    if (project?.startDate && new Date(dueDate) < project.startDate) {
+      throw new BadRequestException(
+        'Batas waktu task tidak boleh lebih awal dari tanggal mulai pengerjaan proyek.',
+      );
+    }
   }
 }
