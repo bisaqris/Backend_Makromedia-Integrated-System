@@ -23,6 +23,11 @@ export class CalendarService {
       : user.role === RoleUser.PRODUKSI ? { members: { some: { userId: user.id } } }
       : {};
 
+    // RBAC: data finansial (jatuh tempo invoice) tidak boleh bocor ke kalender
+    // Project Manager maupun Produksi - hanya role finansial yang berhak.
+    const canSeeFinance =
+      user.role !== RoleUser.PROJECT_MANAGER && user.role !== RoleUser.PRODUKSI;
+
     const projects = await this.prisma.project.findMany({
       where: scope,
       select: {
@@ -36,7 +41,9 @@ export class CalendarService {
     for (const p of projects) {
       if (p.eventDate) events.push({ id: `evt-${p.id}`, title: p.name, date: p.eventDate, type: 'EVENT', projectId: p.id });
       p.tasks.forEach((t) => t.dueDate && events.push({ id: `task-${t.id}`, title: t.title, date: t.dueDate, type: 'TASK', projectId: p.id }));
-      p.invoices.forEach((i) => i.dueDate && events.push({ id: `inv-${i.id}`, title: `Jatuh tempo ${i.invoiceNumber}`, date: i.dueDate, type: 'INVOICE_DUE', projectId: p.id }));
+      if (canSeeFinance) {
+        p.invoices.forEach((i) => i.dueDate && events.push({ id: `inv-${i.id}`, title: `Jatuh tempo ${i.invoiceNumber}`, date: i.dueDate, type: 'INVOICE_DUE', projectId: p.id }));
+      }
     }
     return events.sort((a, b) => (a.date?.getTime() ?? 0) - (b.date?.getTime() ?? 0));
   }
