@@ -6,8 +6,12 @@ import { CreatePositionDto, UpdatePositionDto } from './dto/position.dto';
 export class PositionsService {
   constructor(private prisma: PrismaService) {}
 
-  findAll() {
-    return this.prisma.position.findMany({ orderBy: { name: 'asc' } });
+  /** activeOnly=true menyaring hanya posisi aktif (untuk dropdown pilihan). */
+  findAll(activeOnly = false) {
+    return this.prisma.position.findMany({
+      where: activeOnly ? { isActive: true } : undefined,
+      orderBy: { name: 'asc' },
+    });
   }
 
   async findOne(id: string) {
@@ -15,7 +19,7 @@ export class PositionsService {
   }
 
   create(dto: CreatePositionDto) {
-    return this.prisma.position.create({ data: { name: dto.name } });
+    return this.prisma.position.create({ data: { name: dto.name, isActive: dto.isActive } });
   }
 
   async update(id: string, dto: UpdatePositionDto) {

@@ -6,12 +6,16 @@ import { CreateSkillDto, UpdateSkillDto } from './dto/skill.dto';
 export class SkillsService {
   constructor(private prisma: PrismaService) {}
 
-  findAll() {
-    return this.prisma.skill.findMany({ orderBy: { name: 'asc' } });
+  /** activeOnly=true menyaring hanya skill aktif (untuk dropdown pilihan). */
+  findAll(activeOnly = false) {
+    return this.prisma.skill.findMany({
+      where: activeOnly ? { isActive: true } : undefined,
+      orderBy: { name: 'asc' },
+    });
   }
 
   create(dto: CreateSkillDto) {
-    return this.prisma.skill.create({ data: { name: dto.name } });
+    return this.prisma.skill.create({ data: { name: dto.name, isActive: dto.isActive } });
   }
 
   async update(id: string, dto: UpdateSkillDto) {

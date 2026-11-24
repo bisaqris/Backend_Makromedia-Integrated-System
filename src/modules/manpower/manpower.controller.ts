@@ -6,6 +6,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -37,11 +38,12 @@ export class ManpowerController {
 
   // --- Skill master data ---
   @Get('skills')
-  @ApiOperation({ summary: 'Ambil daftar skill' })
+  @ApiOperation({ summary: 'Ambil daftar skill (active=true untuk hanya yang aktif)' })
+  @ApiQuery({ name: 'active', required: false, type: Boolean, description: 'true = hanya skill aktif' })
   @ApiOkResponse({ description: 'Daftar skill berhasil diambil.' })
   @ApiUnauthorizedResponse(UnauthorizedResponse)
-  listSkills() {
-    return this.skills.findAll();
+  listSkills(@Query('active') active?: string) {
+    return this.skills.findAll(active === 'true');
   }
 
   @Post('skills')

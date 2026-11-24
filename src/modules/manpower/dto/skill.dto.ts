@@ -1,11 +1,13 @@
-import { ArrayUnique, IsArray, IsOptional, IsString, IsUUID } from 'class-validator';
+import { ArrayUnique, IsArray, IsBoolean, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateSkillDto {
   @IsString() name: string;
+  @IsOptional() @IsBoolean() isActive?: boolean;
 }
 
 export class UpdateSkillDto {
   @IsOptional() @IsString() name?: string;
+  @IsOptional() @IsBoolean() isActive?: boolean;
 }
 
 export class SetManpowerSkillsDto {
