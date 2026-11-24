@@ -32,6 +32,14 @@ export class UsersController {
   @ApiForbiddenResponse(ForbiddenResponse)
   findAll() { return this.users.findAll(); }
 
+  @Get('project-managers')
+  @Roles('DIREKTUR', 'FINANCE', 'SALES', 'PROJECT_MANAGER')
+  @ApiOperation({ summary: 'Ambil daftar Project Manager aktif untuk dropdown/filter proyek' })
+  @ApiOkResponse({ description: 'Daftar Project Manager berhasil diambil.' })
+  @ApiUnauthorizedResponse(UnauthorizedResponse)
+  @ApiForbiddenResponse(ForbiddenResponse)
+  findProjectManagers() { return this.users.findProjectManagers(); }
+
   @Post()
   @ApiOperation({ summary: 'Buat akun pengguna baru (DIREKTUR only)' })
   @ApiCreatedResponse({ description: 'Pengguna berhasil dibuat.' })
