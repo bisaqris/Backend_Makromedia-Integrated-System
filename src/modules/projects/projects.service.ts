@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, RoleUser } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
@@ -84,6 +84,10 @@ export class ProjectsService {
   }
 
   create(dto: CreateProjectDto, user: AuthUser) {
+    const eventDate = dto.eventDate ? new Date(dto.eventDate) : undefined;
+    const startDate = dto.startDate ? new Date(dto.startDate) : undefined;
+    const endDate = dto.endDate ? new Date(dto.endDate) : undefined;
+    this.validateDateOrder(eventDate, startDate, endDate);
     return this.prisma.project.create({
       data: {
         name: dto.name,
@@ -96,15 +100,27 @@ export class ProjectsService {
         partnershipModel: dto.partnershipModel,
         venue: dto.venue,
         contractValue: dto.contractValue ?? 0,
-        eventDate: dto.eventDate ? new Date(dto.eventDate) : undefined,
-        startDate: dto.startDate ? new Date(dto.startDate) : undefined,
-        endDate: dto.endDate ? new Date(dto.endDate) : undefined,
+        eventDate,
+        startDate,
+        endDate,
       },
     });
   }
 
   async update(id: string, dto: UpdateProjectDto) {
-    await this.ensureExists(id);
+    const existing = await this.prisma.project.findUnique({
+      where: { id },
+      select: { id: true, eventDate: true, startDate: true, endDate: true },
+    });
+    if (!existing) throw new NotFoundException('Proyek tidak ditemukan.');
+
+    // Validasi memakai nilai efektif (gabungan payload baru + data tersimpan),
+    // agar update parsial tetap menjaga urutan tanggal yang konsisten.
+    const eventDate = dto.eventDate ? new Date(dto.eventDate) : (existing.eventDate ?? undefined);
+    const startDate = dto.startDate ? new Date(dto.startDate) : (existing.startDate ?? undefined);
+    const endDate = dto.endDate ? new Date(dto.endDate) : (existing.endDate ?? undefined);
+    this.validateDateOrder(eventDate, startDate, endDate);
+
     return this.prisma.project.update({
       where: { id },
       data: {
@@ -114,6 +130,23 @@ export class ProjectsService {
         endDate: dto.endDate ? new Date(dto.endDate) : undefined,
       },
     });
+  }
+
+  /**
+   * Validasi urutan tanggal proyek:
+   *   Project Date Starts <= Project Deadlines <= Event Date
+   * Field yang tidak terisi diabaikan (opsional).
+   */
+  private validateDateOrder(eventDate?: Date, startDate?: Date, endDate?: Date) {
+    if (startDate && eventDate && startDate > eventDate) {
+      throw new BadRequestException('Tanggal mulai proyek tidak boleh melewati tanggal event.');
+    }
+    if (startDate && endDate && startDate > endDate) {
+      throw new BadRequestException('Tanggal mulai proyek tidak boleh melewati deadline proyek.');
+    }
+    if (endDate && eventDate && endDate > eventDate) {
+      throw new BadRequestException('Deadline proyek tidak boleh melewati tanggal event.');
+    }
   }
 
   async remove(id: string) {
