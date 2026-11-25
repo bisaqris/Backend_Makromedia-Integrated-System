@@ -168,6 +168,17 @@ model Position {
   @@map("positions")
 }
 
+// Master kategori biaya produksi (dikelola terpusat via menu Setting).
+model ProductionCostCategory {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique @db.VarChar(120)
+  isActive  Boolean  @default(true) @map("is_active") // nonaktif = disembunyikan dari pilihan
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("production_cost_categories")
+}
+
 // ----------------------------------------------------------------------------
 //  CLIENT (PIC) & COMPANY
 // ----------------------------------------------------------------------------
