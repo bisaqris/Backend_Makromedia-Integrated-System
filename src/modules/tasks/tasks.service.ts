@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { StatusTask } from '@prisma/client';
+import { StatusProyek, StatusTask } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
 import { ProjectAccessService } from '../../common/services/project-access.service';
@@ -79,6 +79,21 @@ export class TasksService {
           notes: `Update progress task "${task.title}" menjadi ${progress}%`,
         },
       });
+
+      // Trigger otomatis: jika seluruh task sudah DONE, proyek ditandai COMPLETED
+      // (kecuali proyek sudah COMPLETED/CANCELLED).
+      const remaining = await tx.task.count({
+        where: { projectId: task.projectId, status: { not: StatusTask.DONE } },
+      });
+      if (remaining === 0) {
+        await tx.project.updateMany({
+          where: {
+            id: task.projectId,
+            status: { notIn: [StatusProyek.COMPLETED, StatusProyek.CANCELLED] },
+          },
+          data: { status: StatusProyek.COMPLETED },
+        });
+      }
 
       return updated;
     });
