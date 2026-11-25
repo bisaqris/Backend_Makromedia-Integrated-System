@@ -77,6 +77,11 @@ enum Gender {
   FEMALE
 }
 
+enum ProjectLinkType {
+  DELIVERABLE // link hasil kerja/deliverables
+  ADDITIONAL  // link tambahan (mis. Google Drive)
+}
+
 // ----------------------------------------------------------------------------
 //  USER & ACCESS
 // ----------------------------------------------------------------------------
@@ -347,11 +352,12 @@ model ProjectMember {
 }
 
 model ProjectLink {
-  id        String   @id @default(uuid()) @db.Uuid
-  projectId String   @map("project_id") @db.Uuid
-  label     String   @db.VarChar(120)
+  id        String          @id @default(uuid()) @db.Uuid
+  projectId String          @map("project_id") @db.Uuid
+  label     String          @db.VarChar(120)
   url       String
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  type      ProjectLinkType @default(ADDITIONAL) // deliverables vs link tambahan
+  createdAt DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
