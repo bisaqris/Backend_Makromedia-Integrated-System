@@ -40,6 +40,14 @@ export class UsersController {
   @ApiForbiddenResponse(ForbiddenResponse)
   findProjectManagers() { return this.users.findProjectManagers(); }
 
+  @Get('production-team')
+  @Roles('DIREKTUR', 'FINANCE', 'SALES', 'PROJECT_MANAGER')
+  @ApiOperation({ summary: 'Ambil daftar tim Produksi aktif untuk assign task & anggota proyek' })
+  @ApiOkResponse({ description: 'Daftar tim Produksi berhasil diambil.' })
+  @ApiUnauthorizedResponse(UnauthorizedResponse)
+  @ApiForbiddenResponse(ForbiddenResponse)
+  findProductionTeam() { return this.users.findProductionTeam(); }
+
   @Post()
   @ApiOperation({ summary: 'Buat akun pengguna baru (DIREKTUR only)' })
   @ApiCreatedResponse({ description: 'Pengguna berhasil dibuat.' })
