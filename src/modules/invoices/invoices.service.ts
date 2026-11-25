@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma, StatusInvoice } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -7,7 +7,7 @@ import {
   CompanyConfig, buildBillTo, buildIssuer, buildProjectInfo, mapDocumentItems,
 } from '../../common/documents/document-preview';
 import { getSkipTake, createPaginatedResponse } from '../../common/pagination/pagination.helper';
-import { CreateInvoiceDto } from './dto/invoice.dto';
+import { CreateInvoiceDto, UpdateInvoiceDto } from './dto/invoice.dto';
 import { QueryInvoiceDto } from './dto/query-invoice.dto';
 
 @Injectable()
@@ -125,6 +125,49 @@ export class InvoicesService {
         amount, items: { create: items },
       },
       include: { items: true },
+    });
+  }
+
+  /**
+   * Perbarui invoice beserta item-nya. Hanya diperbolehkan selama masih DRAFT.
+   * Jika `items` dikirim, seluruh item diganti dan amount dihitung ulang.
+   */
+  async update(id: string, dto: UpdateInvoiceDto) {
+    const inv = await this.prisma.invoice.findUnique({ where: { id } });
+    if (!inv) throw new NotFoundException('Invoice tidak ditemukan.');
+    if (inv.status !== StatusInvoice.DRAFT) {
+      throw new BadRequestException('Hanya invoice berstatus DRAFT yang dapat diperbarui.');
+    }
+
+    const newItems = dto.items?.map((i) => ({
+      item: i.item,
+      description: i.description,
+      unitPrice: new Prisma.Decimal(i.unitPrice),
+      quantity: i.quantity,
+      frequency: i.frequency ?? 1,
+      period: i.period,
+      subTotal: new Prisma.Decimal(i.unitPrice).mul(i.quantity).mul(i.frequency ?? 1),
+    }));
+    const amount = newItems
+      ? newItems.reduce((sum, i) => sum.add(i.subTotal), new Prisma.Decimal(0))
+      : new Prisma.Decimal(inv.amount);
+
+    return this.prisma.$transaction(async (tx) => {
+      if (newItems) {
+        await tx.invoiceItem.deleteMany({ where: { invoiceId: id } });
+        await tx.invoiceItem.createMany({ data: newItems.map((i) => ({ ...i, invoiceId: id })) });
+      }
+      return tx.invoice.update({
+        where: { id },
+        data: {
+          ...(dto.invoiceNumber !== undefined && { invoiceNumber: dto.invoiceNumber }),
+          ...(dto.dueDate !== undefined && { dueDate: dto.dueDate ? new Date(dto.dueDate) : null }),
+          ...(dto.paymentInstruction !== undefined && { paymentInstruction: dto.paymentInstruction }),
+          ...(dto.notes !== undefined && { notes: dto.notes }),
+          amount,
+        },
+        include: { items: true },
+      });
     });
   }
 
