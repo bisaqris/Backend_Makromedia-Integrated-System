@@ -17,7 +17,7 @@ import {
   UnauthorizedResponse,
 } from '../../common/swagger/api-response.schema';
 import { QuotationsService } from './quotations.service';
-import { CreateQuotationDto, UpdateQuotationStatusDto } from './dto/quotation.dto';
+import { CreateQuotationDto, UpdateQuotationDto, UpdateQuotationStatusDto } from './dto/quotation.dto';
 import { QueryQuotationDto } from './dto/query-quotation.dto';
 
 @ApiTags('quotations')
@@ -64,6 +64,21 @@ export class QuotationsController {
   @ApiUnauthorizedResponse(UnauthorizedResponse)
   @ApiForbiddenResponse(ForbiddenResponse)
   create(@Body() dto: CreateQuotationDto, @CurrentUser() user: AuthUser) { return this.svc.create(dto, user); }
+
+  @Patch(':id')
+  @Roles('SALES', 'FINANCE', 'DIREKTUR')
+  @ApiOperation({ summary: 'Perbarui quotation & item-nya (hanya saat status DRAFT)' })
+  @ApiOkResponse({ description: 'Quotation berhasil diperbarui.' })
+  @ApiUnauthorizedResponse(UnauthorizedResponse)
+  @ApiForbiddenResponse(ForbiddenResponse)
+  @ApiNotFoundResponse(NotFoundResponse)
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateQuotationDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.svc.update(id, dto, user);
+  }
 
   @Patch(':id/status')
   @Roles('SALES', 'FINANCE', 'DIREKTUR')

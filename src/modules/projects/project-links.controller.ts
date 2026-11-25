@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { ProjectLinkType } from '@prisma/client';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -6,6 +7,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -25,12 +27,16 @@ export class ProjectLinksController {
   constructor(private svc: ProjectLinksService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Ambil daftar link pada proyek' })
+  @ApiOperation({ summary: 'Ambil daftar link pada proyek (filter ?type=DELIVERABLE|ADDITIONAL)' })
+  @ApiQuery({ name: 'type', enum: ProjectLinkType, required: false })
   @ApiOkResponse({ description: 'Daftar link proyek berhasil diambil.' })
   @ApiUnauthorizedResponse(UnauthorizedResponse)
   @ApiNotFoundResponse(NotFoundResponse)
-  findAll(@Param('projectId', ParseUUIDPipe) projectId: string) {
-    return this.svc.findAll(projectId);
+  findAll(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Query('type') type?: ProjectLinkType,
+  ) {
+    return this.svc.findAll(projectId, type);
   }
 
   @Post()

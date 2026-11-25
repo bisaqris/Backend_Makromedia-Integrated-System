@@ -23,6 +23,16 @@ export class CreateQuotationDto {
   items: QuotationItemDto[];
 }
 
+export class UpdateQuotationDto {
+  @IsOptional() @IsString() quotationNumber?: string;
+  @IsOptional() @IsNumber() @Min(0) discountPercent?: number;
+  @IsOptional() @IsNumber() @Min(0) taxAmount?: number;
+  @IsOptional() @IsString() notes?: string;
+  // Jika items dikirim, seluruh item diganti (full replace) & total dihitung ulang.
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => QuotationItemDto)
+  items?: QuotationItemDto[];
+}
+
 export class UpdateQuotationStatusDto {
   @IsEnum(StatusQuotation) status: StatusQuotation;
 }

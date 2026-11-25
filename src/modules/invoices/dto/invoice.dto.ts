@@ -22,3 +22,13 @@ export class CreateInvoiceDto {
   @IsArray() @ValidateNested({ each: true }) @Type(() => InvoiceItemDto)
   items: InvoiceItemDto[];
 }
+
+export class UpdateInvoiceDto {
+  @IsOptional() @IsString() invoiceNumber?: string;
+  @IsOptional() @IsDateString() dueDate?: string;
+  @IsOptional() @IsString() paymentInstruction?: string;
+  @IsOptional() @IsString() notes?: string;
+  // Jika items dikirim, seluruh item diganti (full replace) & amount dihitung ulang.
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => InvoiceItemDto)
+  items?: InvoiceItemDto[];
+}

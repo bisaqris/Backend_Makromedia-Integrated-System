@@ -9,7 +9,7 @@ import {
   CompanyConfig, buildBillTo, buildIssuer, buildProjectInfo, mapDocumentItems,
 } from '../../common/documents/document-preview';
 import { getSkipTake, createPaginatedResponse } from '../../common/pagination/pagination.helper';
-import { CreateQuotationDto } from './dto/quotation.dto';
+import { CreateQuotationDto, UpdateQuotationDto } from './dto/quotation.dto';
 import { QueryQuotationDto } from './dto/query-quotation.dto';
 
 @Injectable()
@@ -126,6 +126,58 @@ export class QuotationsService {
         items: { create: items },
       },
       include: { items: true },
+    });
+  }
+
+  /**
+   * Perbarui quotation beserta item-nya. Hanya diperbolehkan selama masih DRAFT
+   * (belum dikirim/disetujui). Jika `items` dikirim, seluruh item diganti dan
+   * subtotal/diskon/total dihitung ulang.
+   */
+  async update(id: string, dto: UpdateQuotationDto, _user: AuthUser) {
+    const quotation = await this.findOne(id);
+    if (quotation.status !== StatusQuotation.DRAFT) {
+      throw new BadRequestException('Hanya quotation berstatus DRAFT yang dapat diperbarui.');
+    }
+
+    const discountPercent = dto.discountPercent ?? Number(quotation.discountPercent);
+    const taxAmount = dto.taxAmount ?? Number(quotation.taxAmount);
+
+    const newItems = dto.items?.map((i) => ({
+      item: i.item,
+      description: i.description,
+      unitPrice: new Prisma.Decimal(i.unitPrice),
+      quantity: i.quantity,
+      frequency: i.frequency ?? 1,
+      period: i.period,
+      subTotal: new Prisma.Decimal(i.unitPrice).mul(i.quantity).mul(i.frequency ?? 1),
+    }));
+
+    const subtotal = newItems
+      ? newItems.reduce((sum, i) => sum.add(i.subTotal), new Prisma.Decimal(0))
+      : new Prisma.Decimal(quotation.subtotal);
+    const discount = subtotal.mul(new Prisma.Decimal(discountPercent).div(100));
+    const total = subtotal.sub(discount).add(taxAmount);
+
+    return this.prisma.$transaction(async (tx) => {
+      if (newItems) {
+        await tx.quotationItem.deleteMany({ where: { quotationId: id } });
+        await tx.quotationItem.createMany({
+          data: newItems.map((i) => ({ ...i, quotationId: id })),
+        });
+      }
+      return tx.quotation.update({
+        where: { id },
+        data: {
+          ...(dto.quotationNumber !== undefined && { quotationNumber: dto.quotationNumber }),
+          ...(dto.notes !== undefined && { notes: dto.notes }),
+          discountPercent,
+          taxAmount,
+          subtotal,
+          totalValue: total,
+        },
+        include: { items: true },
+      });
     });
   }
 
