@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -6,6 +6,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -25,11 +26,12 @@ export class PositionsController {
   constructor(private svc: PositionsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Ambil daftar posisi/jabatan' })
+  @ApiOperation({ summary: 'Ambil daftar posisi/jabatan (active=true untuk hanya yang aktif)' })
+  @ApiQuery({ name: 'active', required: false, type: Boolean, description: 'true = hanya posisi aktif' })
   @ApiOkResponse({ description: 'Daftar posisi/jabatan berhasil diambil.' })
   @ApiUnauthorizedResponse(UnauthorizedResponse)
-  findAll() {
-    return this.svc.findAll();
+  findAll(@Query('active') active?: string) {
+    return this.svc.findAll(active === 'true');
   }
 
   @Get(':id')

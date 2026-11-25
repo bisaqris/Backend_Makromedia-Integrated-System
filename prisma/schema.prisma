@@ -153,6 +153,7 @@ model RefreshToken {
 model Position {
   id        String   @id @default(uuid()) @db.Uuid
   name      String   @unique @db.VarChar(80)
+  isActive  Boolean  @default(true) @map("is_active") // nonaktif = disembunyikan dari pilihan
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -254,6 +255,7 @@ model Manpower {
 model Skill {
   id        String   @id @default(uuid()) @db.Uuid
   name      String   @unique @db.VarChar(80)
+  isActive  Boolean  @default(true) @map("is_active") // nonaktif = disembunyikan dari pilihan
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 

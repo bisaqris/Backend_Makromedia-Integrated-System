@@ -20,7 +20,10 @@ export class InvoicesService {
       ...(query.status && { status: query.status }),
       ...(query.projectId && { projectId: query.projectId }),
       ...(query.search && {
-        invoiceNumber: { contains: query.search, mode: 'insensitive' },
+        OR: [
+          { invoiceNumber: { contains: query.search, mode: 'insensitive' } },
+          { project: { name: { contains: query.search, mode: 'insensitive' } } },
+        ],
       }),
     };
 

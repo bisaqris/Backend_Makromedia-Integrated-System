@@ -22,7 +22,10 @@ export class QuotationsService {
       ...(query.status && { status: query.status }),
       ...(query.projectId && { projectId: query.projectId }),
       ...(query.search && {
-        quotationNumber: { contains: query.search, mode: 'insensitive' },
+        OR: [
+          { quotationNumber: { contains: query.search, mode: 'insensitive' } },
+          { project: { name: { contains: query.search, mode: 'insensitive' } } },
+        ],
       }),
     };
 

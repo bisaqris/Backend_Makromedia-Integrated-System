@@ -14,6 +14,15 @@ export class UsersService {
     return this.prisma.user.findMany({ select: safe, orderBy: { createdAt: 'desc' } });
   }
 
+  /** Daftar user role PROJECT_MANAGER yang aktif - untuk dropdown/filter di form proyek. */
+  findProjectManagers() {
+    return this.prisma.user.findMany({
+      where: { role: 'PROJECT_MANAGER', isActive: true },
+      select: { id: true, name: true, email: true, role: true },
+      orderBy: { name: 'asc' },
+    });
+  }
+
   async create(dto: CreateUserDto) {
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
     return this.prisma.user.create({
