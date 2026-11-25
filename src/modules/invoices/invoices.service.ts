@@ -171,9 +171,31 @@ export class InvoicesService {
     });
   }
 
+  /**
+   * BREAKING (v2): alur approval + pembayaran yang ditegakkan.
+   *   DRAFT    -> APPROVED | REJECTED   (approval)
+   *   APPROVED -> PAID | OVERDUE         (pembayaran)
+   *   OVERDUE  -> PAID
+   * Nilai SENT tidak lagi bisa diset. Transisi di luar graf ditolak.
+   */
   async updateStatus(id: string, status: StatusInvoice, note?: string) {
     const inv = await this.prisma.invoice.findUnique({ where: { id } });
     if (!inv) throw new NotFoundException('Invoice tidak ditemukan.');
+
+    const transitions: Record<StatusInvoice, StatusInvoice[]> = {
+      [StatusInvoice.DRAFT]: [StatusInvoice.APPROVED, StatusInvoice.REJECTED],
+      [StatusInvoice.APPROVED]: [StatusInvoice.PAID, StatusInvoice.OVERDUE],
+      [StatusInvoice.OVERDUE]: [StatusInvoice.PAID],
+      // Data lama berstatus SENT tetap dapat diputuskan.
+      [StatusInvoice.SENT]: [StatusInvoice.APPROVED, StatusInvoice.REJECTED],
+      [StatusInvoice.PAID]: [],
+      [StatusInvoice.REJECTED]: [],
+    };
+
+    if (!transitions[inv.status].includes(status)) {
+      throw new BadRequestException(`Transisi status invoice ${inv.status} -> ${status} tidak valid.`);
+    }
+
     return this.prisma.invoice.update({
       where: { id },
       data: { status, ...(note !== undefined && { statusNote: note }) },
