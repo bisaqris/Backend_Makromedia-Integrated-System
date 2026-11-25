@@ -1,6 +1,6 @@
 {
   "name": "backend-makromedia-integrated-system",
-  "version": "2.0.0-dev",
+  "version": "2.0.0",
   "description": "Makromedia Integrated System — Backend (NestJS)",
   "private": true,
   "scripts": {
