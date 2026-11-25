@@ -1,8 +1,9 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -17,8 +18,16 @@ export class CalendarController {
   constructor(private svc: CalendarService) {}
 
   @Get('events')
-  @ApiOperation({ summary: 'Ambil daftar event kalender sesuai role user' })
+  @ApiOperation({ summary: 'Ambil event kalender sesuai role, difilter rentang tanggal (opsional)' })
+  @ApiQuery({ name: 'start', required: false, description: 'Batas awal rentang (ISO 8601)' })
+  @ApiQuery({ name: 'end', required: false, description: 'Batas akhir rentang (ISO 8601)' })
   @ApiOkResponse({ description: 'Daftar event kalender berhasil diambil.' })
   @ApiUnauthorizedResponse(UnauthorizedResponse)
-  events(@CurrentUser() user: AuthUser) { return this.svc.getEvents(user); }
+  events(
+    @CurrentUser() user: AuthUser,
+    @Query('start') start?: string,
+    @Query('end') end?: string,
+  ) {
+    return this.svc.getEvents(user, start, end);
+  }
 }
