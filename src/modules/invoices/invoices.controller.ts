@@ -19,7 +19,7 @@ import {
   UnauthorizedResponse,
 } from '../../common/swagger/api-response.schema';
 import { InvoicesService } from './invoices.service';
-import { CreateInvoiceDto } from './dto/invoice.dto';
+import { CreateInvoiceDto, UpdateInvoiceDto } from './dto/invoice.dto';
 import { QueryInvoiceDto } from './dto/query-invoice.dto';
 
 @ApiTags('invoices')
@@ -67,6 +67,17 @@ export class InvoicesController {
   @ApiUnauthorizedResponse(UnauthorizedResponse)
   @ApiForbiddenResponse(ForbiddenResponse)
   create(@Body() dto: CreateInvoiceDto, @CurrentUser() user: AuthUser) { return this.svc.create(dto, user); }
+
+  @Patch(':id')
+  @Roles('FINANCE', 'DIREKTUR')
+  @ApiOperation({ summary: 'Perbarui invoice & item-nya (hanya saat status DRAFT)' })
+  @ApiOkResponse({ description: 'Invoice berhasil diperbarui.' })
+  @ApiUnauthorizedResponse(UnauthorizedResponse)
+  @ApiForbiddenResponse(ForbiddenResponse)
+  @ApiNotFoundResponse(NotFoundResponse)
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateInvoiceDto) {
+    return this.svc.update(id, dto);
+  }
 
   @Patch(':id/status')
   @Roles('FINANCE', 'DIREKTUR')
