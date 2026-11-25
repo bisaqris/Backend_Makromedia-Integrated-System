@@ -1,7 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import {
   ApiBearerAuth,
-  ApiBody,
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
@@ -10,7 +9,6 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { StatusInvoice } from '@prisma/client';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, AuthUser } from '../../common/decorators/current-user.decorator';
 import {
@@ -19,7 +17,7 @@ import {
   UnauthorizedResponse,
 } from '../../common/swagger/api-response.schema';
 import { InvoicesService } from './invoices.service';
-import { CreateInvoiceDto, UpdateInvoiceDto } from './dto/invoice.dto';
+import { CreateInvoiceDto, UpdateInvoiceDto, UpdateInvoiceStatusDto } from './dto/invoice.dto';
 import { QueryInvoiceDto } from './dto/query-invoice.dto';
 
 @ApiTags('invoices')
@@ -82,13 +80,12 @@ export class InvoicesController {
   @Patch(':id/status')
   @Roles('FINANCE', 'DIREKTUR')
   @ApiOperation({ summary: 'Update status invoice' })
-  @ApiBody({ schema: { type: 'object', properties: { status: { type: 'string', enum: Object.values(StatusInvoice), example: 'PAID' } } } })
   @ApiOkResponse({ description: 'Status invoice berhasil diperbarui.' })
   @ApiUnauthorizedResponse(UnauthorizedResponse)
   @ApiForbiddenResponse(ForbiddenResponse)
   @ApiNotFoundResponse(NotFoundResponse)
-  status(@Param('id', ParseUUIDPipe) id: string, @Body('status') status: StatusInvoice) {
-    return this.svc.updateStatus(id, status);
+  status(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateInvoiceStatusDto) {
+    return this.svc.updateStatus(id, dto.status, dto.note);
   }
 }
 
