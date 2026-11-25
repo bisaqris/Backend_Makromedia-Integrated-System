@@ -36,11 +36,12 @@ export class ProductionCostsController {
   @Roles('DIREKTUR')
   @ApiOperation({ summary: 'Daftar pengajuan biaya produksi menunggu approval (DIREKTUR)' })
   @ApiQuery({ name: 'status', enum: StatusBiaya, required: false })
+  @ApiQuery({ name: 'search', required: false, description: 'Cari kategori, deskripsi, pelaksana, atau nama proyek' })
   @ApiOkResponse({ description: 'Daftar pengajuan berhasil diambil.' })
   @ApiUnauthorizedResponse(UnauthorizedResponse)
   @ApiForbiddenResponse(ForbiddenResponse)
-  applications(@Query('status') status?: StatusBiaya) {
-    return this.costs.findApplications(status);
+  applications(@Query('status') status?: StatusBiaya, @Query('search') search?: string) {
+    return this.costs.findApplications(status, search);
   }
 
   @Get('project/:projectId')
