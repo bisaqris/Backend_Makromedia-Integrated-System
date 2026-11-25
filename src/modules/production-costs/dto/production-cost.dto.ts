@@ -24,3 +24,8 @@ export class UpdateProductionCostDto {
 export class RejectCostDto {
   @IsString() rejectionNote: string;
 }
+
+/** Catatan opsional saat submit/approve pengajuan biaya produksi. */
+export class CostStatusNoteDto {
+  @IsOptional() @IsString() note?: string;
+}

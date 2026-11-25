@@ -171,9 +171,12 @@ export class InvoicesService {
     });
   }
 
-  async updateStatus(id: string, status: StatusInvoice) {
+  async updateStatus(id: string, status: StatusInvoice, note?: string) {
     const inv = await this.prisma.invoice.findUnique({ where: { id } });
     if (!inv) throw new NotFoundException('Invoice tidak ditemukan.');
-    return this.prisma.invoice.update({ where: { id }, data: { status } });
+    return this.prisma.invoice.update({
+      where: { id },
+      data: { status, ...(note !== undefined && { statusNote: note }) },
+    });
   }
 }

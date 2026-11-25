@@ -1,7 +1,8 @@
 import { Type } from 'class-transformer';
 import {
-  IsArray, IsDateString, IsInt, IsNumber, IsOptional, IsString, IsUUID, Min, ValidateNested,
+  IsArray, IsDateString, IsEnum, IsInt, IsNumber, IsOptional, IsString, IsUUID, Min, ValidateNested,
 } from 'class-validator';
+import { StatusInvoice } from '@prisma/client';
 
 export class InvoiceItemDto {
   @IsString() item: string;
@@ -21,6 +22,11 @@ export class CreateInvoiceDto {
   @IsOptional() @IsString() notes?: string;
   @IsArray() @ValidateNested({ each: true }) @Type(() => InvoiceItemDto)
   items: InvoiceItemDto[];
+}
+
+export class UpdateInvoiceStatusDto {
+  @IsEnum(StatusInvoice) status: StatusInvoice;
+  @IsOptional() @IsString() note?: string;
 }
 
 export class UpdateInvoiceDto {

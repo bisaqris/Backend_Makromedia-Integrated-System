@@ -22,7 +22,7 @@ import {
 } from '../../common/swagger/api-response.schema';
 import { ProductionCostsService } from './production-costs.service';
 import {
-  CreateProductionCostDto, UpdateProductionCostDto, RejectCostDto,
+  CreateProductionCostDto, UpdateProductionCostDto, RejectCostDto, CostStatusNoteDto,
 } from './dto/production-cost.dto';
 
 @ApiTags('production-costs')
@@ -86,8 +86,12 @@ export class ProductionCostsController {
   @ApiUnauthorizedResponse(UnauthorizedResponse)
   @ApiForbiddenResponse(ForbiddenResponse)
   @ApiNotFoundResponse(NotFoundResponse)
-  submit(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
-    return this.costs.submit(id, user);
+  submit(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthUser,
+    @Body() dto: CostStatusNoteDto,
+  ) {
+    return this.costs.submit(id, user, dto.note);
   }
 
   @Patch(':id/approve')
@@ -97,8 +101,12 @@ export class ProductionCostsController {
   @ApiUnauthorizedResponse(UnauthorizedResponse)
   @ApiForbiddenResponse(ForbiddenResponse)
   @ApiNotFoundResponse(NotFoundResponse)
-  approve(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
-    return this.costs.approve(id, user);
+  approve(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthUser,
+    @Body() dto: CostStatusNoteDto,
+  ) {
+    return this.costs.approve(id, user, dto.note);
   }
 
   @Patch(':id/reject')
