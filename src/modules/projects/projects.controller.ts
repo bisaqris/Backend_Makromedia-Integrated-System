@@ -68,6 +68,17 @@ export class ProjectsController {
     return this.projects.update(id, dto);
   }
 
+  @Patch(':id/complete')
+  @Roles('SALES', 'FINANCE', 'DIREKTUR', 'PROJECT_MANAGER')
+  @ApiOperation({ summary: 'Tandai proyek selesai (COMPLETED) - seluruh task harus DONE' })
+  @ApiOkResponse({ description: 'Proyek berhasil ditandai selesai.' })
+  @ApiUnauthorizedResponse(UnauthorizedResponse)
+  @ApiForbiddenResponse(ForbiddenResponse)
+  @ApiNotFoundResponse(NotFoundResponse)
+  complete(@Param('id', ParseUUIDPipe) id: string) {
+    return this.projects.markCompleted(id);
+  }
+
   @Delete(':id')
   @Roles('DIREKTUR', 'FINANCE')
   @ApiOperation({ summary: 'Hapus proyek' })

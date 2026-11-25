@@ -28,11 +28,16 @@ export class CalendarService {
     const canSeeFinance =
       user.role !== RoleUser.PROJECT_MANAGER && user.role !== RoleUser.PRODUKSI;
 
+    // Produksi hanya melihat task yang ditugaskan kepadanya (assignedToId),
+    // bukan seluruh task proyek.
+    const taskWhere =
+      user.role === RoleUser.PRODUKSI ? { assignedToId: user.id } : undefined;
+
     const projects = await this.prisma.project.findMany({
       where: scope,
       select: {
         id: true, name: true, eventDate: true,
-        tasks: { select: { id: true, title: true, dueDate: true } },
+        tasks: { where: taskWhere, select: { id: true, title: true, dueDate: true } },
         invoices: { select: { id: true, invoiceNumber: true, dueDate: true } },
       },
     });

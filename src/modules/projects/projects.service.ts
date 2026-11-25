@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, RoleUser } from '@prisma/client';
+import { Prisma, RoleUser, StatusProyek, StatusTask } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
 import { CreateProjectDto } from './dto/create-project.dto';
@@ -147,6 +147,36 @@ export class ProjectsService {
     if (endDate && eventDate && endDate > eventDate) {
       throw new BadRequestException('Deadline proyek tidak boleh melewati tanggal event.');
     }
+  }
+
+  /**
+   * Tandai proyek selesai (COMPLETED). Aturan: seluruh task harus sudah DONE.
+   * Dipanggil manual lewat endpoint, dan otomatis saat task terakhir selesai.
+   * Proyek CANCELLED tidak dapat diselesaikan.
+   */
+  async markCompleted(id: string) {
+    const project = await this.prisma.project.findUnique({
+      where: { id },
+      select: { id: true, status: true },
+    });
+    if (!project) throw new NotFoundException('Proyek tidak ditemukan.');
+    if (project.status === StatusProyek.COMPLETED) {
+      return this.prisma.project.findUnique({ where: { id } });
+    }
+    if (project.status === StatusProyek.CANCELLED) {
+      throw new BadRequestException('Proyek yang dibatalkan tidak dapat diselesaikan.');
+    }
+
+    const unfinished = await this.prisma.task.count({
+      where: { projectId: id, status: { not: StatusTask.DONE } },
+    });
+    if (unfinished > 0) {
+      throw new BadRequestException(
+        `Masih ada ${unfinished} task yang belum selesai. Selesaikan seluruh task sebelum menandai proyek Completed.`,
+      );
+    }
+
+    return this.prisma.project.update({ where: { id }, data: { status: StatusProyek.COMPLETED } });
   }
 
   async remove(id: string) {

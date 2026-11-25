@@ -23,6 +23,15 @@ export class UsersService {
     });
   }
 
+  /** Daftar user role PRODUKSI yang aktif - untuk assign task & tambah anggota tim proyek. */
+  findProductionTeam() {
+    return this.prisma.user.findMany({
+      where: { role: 'PRODUKSI', isActive: true },
+      select: { id: true, name: true, email: true, role: true },
+      orderBy: { name: 'asc' },
+    });
+  }
+
   async create(dto: CreateUserDto) {
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
     return this.prisma.user.create({
