@@ -185,7 +185,7 @@ export class QuotationsService {
    * Approval workflow: DRAFT -> SENT (Sales/Finance) -> APPROVED/REJECTED (Direktur).
    * Menegakkan transisi valid + otorisasi role pada tiap langkah.
    */
-  async updateStatus(id: string, status: StatusQuotation, user: AuthUser) {
+  async updateStatus(id: string, status: StatusQuotation, user: AuthUser, note?: string) {
     const quotation = await this.findOne(id);
 
     if (status === StatusQuotation.SENT) {
@@ -208,7 +208,7 @@ export class QuotationsService {
 
     return this.prisma.quotation.update({
       where: { id },
-      data: { status },
+      data: { status, ...(note !== undefined && { statusNote: note }) },
       include: { items: true },
     });
   }

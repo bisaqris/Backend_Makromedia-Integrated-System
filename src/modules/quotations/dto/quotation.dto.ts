@@ -35,4 +35,5 @@ export class UpdateQuotationDto {
 
 export class UpdateQuotationStatusDto {
   @IsEnum(StatusQuotation) status: StatusQuotation;
+  @IsOptional() @IsString() note?: string;
 }

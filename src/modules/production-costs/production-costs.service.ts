@@ -64,21 +64,31 @@ export class ProductionCostsService {
   }
 
   /** PM mengajukan biaya ke Direktur -> status PENDING (UC08). */
-  async submit(id: string, user: AuthUser) {
+  async submit(id: string, user: AuthUser, note?: string) {
     const cost = await this.get(id);
     await this.access.assertCanAccess(cost.projectId, user);
     return this.prisma.productionCost.update({
       where: { id },
-      data: { status: StatusBiaya.PENDING, submittedAt: new Date() },
+      data: {
+        status: StatusBiaya.PENDING,
+        submittedAt: new Date(),
+        ...(note !== undefined && { statusNote: note }),
+      },
     });
   }
 
   /** Direktur menyetujui (UC09). */
-  async approve(id: string, director: AuthUser) {
+  async approve(id: string, director: AuthUser, note?: string) {
     await this.get(id);
     return this.prisma.productionCost.update({
       where: { id },
-      data: { status: StatusBiaya.APPROVED, approvedById: director.id, approvedAt: new Date(), rejectionNote: null },
+      data: {
+        status: StatusBiaya.APPROVED,
+        approvedById: director.id,
+        approvedAt: new Date(),
+        rejectionNote: null,
+        ...(note !== undefined && { statusNote: note }),
+      },
     });
   }
 
@@ -87,7 +97,13 @@ export class ProductionCostsService {
     await this.get(id);
     return this.prisma.productionCost.update({
       where: { id },
-      data: { status: StatusBiaya.REJECTED, approvedById: director.id, approvedAt: new Date(), rejectionNote: dto.rejectionNote },
+      data: {
+        status: StatusBiaya.REJECTED,
+        approvedById: director.id,
+        approvedAt: new Date(),
+        rejectionNote: dto.rejectionNote,
+        statusNote: dto.rejectionNote,
+      },
     });
   }
 

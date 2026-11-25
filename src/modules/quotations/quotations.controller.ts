@@ -92,7 +92,7 @@ export class QuotationsController {
     @Body() dto: UpdateQuotationStatusDto,
     @CurrentUser() user: AuthUser,
   ) {
-    return this.svc.updateStatus(id, dto.status, user);
+    return this.svc.updateStatus(id, dto.status, user, dto.note);
   }
 }
 

@@ -433,6 +433,7 @@ model Quotation {
   totalValue      Decimal         @default(0) @map("total_value") @db.Decimal(15, 2)
   status          StatusQuotation @default(DRAFT)
   notes           String?
+  statusNote      String?         @map("status_note") // catatan pada aksi status (approve/reject/kirim)
   createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -477,6 +478,7 @@ model Invoice {
   dueDate       DateTime?     @map("due_date") @db.Date
   paymentInstruction String?  @map("payment_instruction")
   notes         String?
+  statusNote    String?       @map("status_note") // catatan pada aksi status (kirim/paid/overdue)
   createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -528,6 +530,7 @@ model ProductionCost {
   approvedById  String?     @map("approved_by") @db.Uuid
   approvedAt    DateTime?   @map("approved_at") @db.Timestamptz(6)
   rejectionNote String?     @map("rejection_note")
+  statusNote    String?     @map("status_note") // catatan pada aksi status (submit/approve/reject)
   createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
 
