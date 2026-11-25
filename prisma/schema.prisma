@@ -53,7 +53,9 @@ enum StatusQuotation {
 
 enum StatusInvoice {
   DRAFT
-  SENT
+  SENT // legacy (digantikan oleh alur approval; tidak lagi bisa diset sejak v2)
+  APPROVED
+  REJECTED
   PAID
   OVERDUE
 }

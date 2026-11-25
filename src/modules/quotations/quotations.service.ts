@@ -182,28 +182,23 @@ export class QuotationsService {
   }
 
   /**
-   * Approval workflow: DRAFT -> SENT (Sales/Finance) -> APPROVED/REJECTED (Direktur).
-   * Menegakkan transisi valid + otorisasi role pada tiap langkah.
+   * BREAKING (v2): alur approval langsung. Quotation DRAFT di-APPROVE atau
+   * REJECT oleh Direktur tanpa langkah SENT. Nilai SENT tidak lagi bisa diset.
    */
   async updateStatus(id: string, status: StatusQuotation, user: AuthUser, note?: string) {
     const quotation = await this.findOne(id);
 
-    if (status === StatusQuotation.SENT) {
-      if (quotation.status !== StatusQuotation.DRAFT) {
-        throw new BadRequestException('Hanya quotation berstatus DRAFT yang dapat dikirim (SENT).');
-      }
-      if (!['SALES', 'FINANCE', 'DIREKTUR'].includes(user.role)) {
-        throw new ForbiddenException('Hanya Sales, Finance, atau Direktur yang dapat mengirim quotation.');
-      }
-    } else if (status === StatusQuotation.APPROVED || status === StatusQuotation.REJECTED) {
-      if (quotation.status !== StatusQuotation.SENT) {
-        throw new BadRequestException('Hanya quotation berstatus SENT yang dapat di-approve/reject.');
-      }
-      if (user.role !== 'DIREKTUR') {
-        throw new ForbiddenException('Hanya Direktur yang dapat menyetujui/menolak quotation.');
-      }
-    } else {
-      throw new BadRequestException('Transisi status tidak valid.');
+    if (status !== StatusQuotation.APPROVED && status !== StatusQuotation.REJECTED) {
+      throw new BadRequestException(
+        'Alur quotation memakai approval langsung: status hanya dapat APPROVED atau REJECTED.',
+      );
+    }
+    // Sumber: DRAFT (atau SENT data lama) yang belum diputuskan.
+    if (quotation.status !== StatusQuotation.DRAFT && quotation.status !== StatusQuotation.SENT) {
+      throw new BadRequestException('Hanya quotation yang belum diputuskan yang dapat di-approve/reject.');
+    }
+    if (user.role !== 'DIREKTUR') {
+      throw new ForbiddenException('Hanya Direktur yang dapat menyetujui/menolak quotation.');
     }
 
     return this.prisma.quotation.update({
