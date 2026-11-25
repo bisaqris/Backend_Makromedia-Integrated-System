@@ -325,6 +325,7 @@ model Project {
   startDate        DateTime?      @map("start_date") @db.Date
   endDate          DateTime?      @map("end_date") @db.Date
   status           StatusProyek   @default(DRAFT)
+  brief            String?        @db.Text // General Brief (HTML; dapat memuat gambar base64)
   createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
 
