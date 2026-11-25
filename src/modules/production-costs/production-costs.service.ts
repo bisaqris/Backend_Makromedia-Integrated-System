@@ -24,9 +24,19 @@ export class ProductionCostsService {
   }
 
   /** Daftar pengajuan (UC09 - Approval Cost). Direktur melihat status PENDING. */
-  findApplications(status?: StatusBiaya) {
+  findApplications(status?: StatusBiaya, search?: string) {
     return this.prisma.productionCost.findMany({
-      where: { ...(status && { status }) },
+      where: {
+        ...(status && { status }),
+        ...(search && {
+          OR: [
+            { category: { contains: search, mode: 'insensitive' } },
+            { description: { contains: search, mode: 'insensitive' } },
+            { executorName: { contains: search, mode: 'insensitive' } },
+            { project: { name: { contains: search, mode: 'insensitive' } } },
+          ],
+        }),
+      },
       include: {
         project: { select: { id: true, name: true } },
         createdBy: { select: { id: true, name: true } },
