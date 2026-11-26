@@ -27,6 +27,7 @@ import { QuotationsModule } from './modules/quotations/quotations.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { ProductionCostsModule } from './modules/production-costs/production-costs.module';
 import { ProductionCostCategoriesModule } from './modules/production-cost-categories/production-cost-categories.module';
+import { InvoiceSettingsModule } from './modules/invoice-settings/invoice-settings.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 
@@ -50,6 +51,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     InvoicesModule,
     ProductionCostsModule,
     ProductionCostCategoriesModule,
+    InvoiceSettingsModule,
     CalendarModule,
     DashboardModule,
   ],
