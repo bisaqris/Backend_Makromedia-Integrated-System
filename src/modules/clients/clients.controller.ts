@@ -30,6 +30,13 @@ export class ClientsController {
   @ApiUnauthorizedResponse(UnauthorizedResponse)
   findAll() { return this.svc.findAll(); }
 
+  @Get(':id')
+  @ApiOperation({ summary: 'Ambil detail client (termasuk perusahaan) berdasarkan ID' })
+  @ApiOkResponse({ description: 'Detail client berhasil diambil.' })
+  @ApiUnauthorizedResponse(UnauthorizedResponse)
+  @ApiNotFoundResponse(NotFoundResponse)
+  findOne(@Param('id', ParseUUIDPipe) id: string) { return this.svc.findOne(id); }
+
   @Post()
   @Roles('SALES', 'FINANCE', 'DIREKTUR')
   @ApiOperation({ summary: 'Tambah client baru' })
