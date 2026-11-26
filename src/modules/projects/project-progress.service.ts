@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { assertProjectEditable } from '../../common/services/project-status.util';
 import { CreateProjectProgressDto, UpdateProjectProgressDto } from './dto/project-progress.dto';
 
 const withAuthor = {
@@ -21,6 +22,7 @@ export class ProjectProgressService {
 
   async create(projectId: string, userId: string, dto: CreateProjectProgressDto) {
     await this.ensureProject(projectId);
+    await assertProjectEditable(this.prisma, projectId);
     return this.prisma.projectProgress.create({
       data: { projectId, createdById: userId, percentage: dto.percentage, notes: dto.notes },
       ...withAuthor,
@@ -29,6 +31,7 @@ export class ProjectProgressService {
 
   async update(projectId: string, progressId: string, dto: UpdateProjectProgressDto) {
     await this.getProgress(projectId, progressId);
+    await assertProjectEditable(this.prisma, projectId);
     return this.prisma.projectProgress.update({
       where: { id: progressId },
       data: { percentage: dto.percentage, notes: dto.notes },
@@ -38,6 +41,7 @@ export class ProjectProgressService {
 
   async remove(projectId: string, progressId: string) {
     await this.getProgress(projectId, progressId);
+    await assertProjectEditable(this.prisma, projectId);
     return this.prisma.projectProgress.delete({ where: { id: progressId } });
   }
 

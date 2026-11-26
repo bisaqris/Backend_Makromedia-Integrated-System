@@ -7,6 +7,7 @@ import {
   CompanyConfig, buildBillTo, buildIssuer, buildProjectInfo, mapDocumentItems,
 } from '../../common/documents/document-preview';
 import { getSkipTake, createPaginatedResponse } from '../../common/pagination/pagination.helper';
+import { assertProjectEditable } from '../../common/services/project-status.util';
 import { CreateInvoiceDto, UpdateInvoiceDto } from './dto/invoice.dto';
 import { QueryInvoiceDto } from './dto/query-invoice.dto';
 
@@ -110,7 +111,8 @@ export class InvoicesService {
     };
   }
 
-  create(dto: CreateInvoiceDto, user: AuthUser) {
+  async create(dto: CreateInvoiceDto, user: AuthUser) {
+    await assertProjectEditable(this.prisma, dto.projectId);
     const items = dto.items.map((i) => ({
       ...i, frequency: i.frequency ?? 1,
       subTotal: new Prisma.Decimal(i.unitPrice).mul(i.quantity).mul(i.frequency ?? 1),
@@ -135,6 +137,7 @@ export class InvoicesService {
   async update(id: string, dto: UpdateInvoiceDto) {
     const inv = await this.prisma.invoice.findUnique({ where: { id } });
     if (!inv) throw new NotFoundException('Invoice tidak ditemukan.');
+    await assertProjectEditable(this.prisma, inv.projectId);
     if (inv.status !== StatusInvoice.DRAFT) {
       throw new BadRequestException('Hanya invoice berstatus DRAFT yang dapat diperbarui.');
     }
@@ -181,6 +184,7 @@ export class InvoicesService {
   async updateStatus(id: string, status: StatusInvoice, note?: string) {
     const inv = await this.prisma.invoice.findUnique({ where: { id } });
     if (!inv) throw new NotFoundException('Invoice tidak ditemukan.');
+    await assertProjectEditable(this.prisma, inv.projectId);
 
     const transitions: Record<StatusInvoice, StatusInvoice[]> = {
       [StatusInvoice.DRAFT]: [StatusInvoice.APPROVED, StatusInvoice.REJECTED],

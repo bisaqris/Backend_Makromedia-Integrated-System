@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ProjectLinkType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { assertProjectEditable } from '../../common/services/project-status.util';
 import { CreateProjectLinkDto, UpdateProjectLinkDto } from './dto/project-link.dto';
 
 @Injectable()
@@ -17,6 +18,7 @@ export class ProjectLinksService {
 
   async create(projectId: string, dto: CreateProjectLinkDto) {
     await this.ensureProject(projectId);
+    await assertProjectEditable(this.prisma, projectId);
     return this.prisma.projectLink.create({
       data: { projectId, label: dto.label, url: dto.url, type: dto.type },
     });
@@ -24,11 +26,13 @@ export class ProjectLinksService {
 
   async update(projectId: string, linkId: string, dto: UpdateProjectLinkDto) {
     await this.getLink(projectId, linkId);
+    await assertProjectEditable(this.prisma, projectId);
     return this.prisma.projectLink.update({ where: { id: linkId }, data: dto });
   }
 
   async remove(projectId: string, linkId: string) {
     await this.getLink(projectId, linkId);
+    await assertProjectEditable(this.prisma, projectId);
     return this.prisma.projectLink.delete({ where: { id: linkId } });
   }
 
