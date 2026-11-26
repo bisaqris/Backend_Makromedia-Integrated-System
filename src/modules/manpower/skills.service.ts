@@ -6,10 +6,12 @@ import { CreateSkillDto, UpdateSkillDto } from './dto/skill.dto';
 export class SkillsService {
   constructor(private prisma: PrismaService) {}
 
-  /** activeOnly=true menyaring hanya skill aktif (untuk dropdown pilihan). */
+  /** activeOnly=true menyaring hanya skill aktif (untuk dropdown pilihan).
+   *  _count mengembalikan jumlah pemakai (manpower + user) per skill. */
   findAll(activeOnly = false) {
     return this.prisma.skill.findMany({
       where: activeOnly ? { isActive: true } : undefined,
+      include: { _count: { select: { manpower: true, users: true } } },
       orderBy: { name: 'asc' },
     });
   }
