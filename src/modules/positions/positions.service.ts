@@ -6,10 +6,12 @@ import { CreatePositionDto, UpdatePositionDto } from './dto/position.dto';
 export class PositionsService {
   constructor(private prisma: PrismaService) {}
 
-  /** activeOnly=true menyaring hanya posisi aktif (untuk dropdown pilihan). */
+  /** activeOnly=true menyaring hanya posisi aktif (untuk dropdown pilihan).
+   *  _count mengembalikan jumlah pemakai (user + manpower) per posisi. */
   findAll(activeOnly = false) {
     return this.prisma.position.findMany({
       where: activeOnly ? { isActive: true } : undefined,
+      include: { _count: { select: { users: true, manpower: true } } },
       orderBy: { name: 'asc' },
     });
   }

@@ -12,6 +12,14 @@ export class CompanyClientsService {
       orderBy: { name: 'asc' },
     });
   }
+  async findOne(id: string) {
+    const company = await this.prisma.companyClient.findFirst({
+      where: { id, deletedAt: null },
+      include: { clients: { where: { deletedAt: null } } },
+    });
+    if (!company) throw new NotFoundException('Perusahaan client tidak ditemukan.');
+    return company;
+  }
   create(dto: UpsertCompanyClientDto) { return this.prisma.companyClient.create({ data: dto }); }
   async update(id: string, dto: UpsertCompanyClientDto) {
     await this.ensure(id);

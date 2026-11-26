@@ -10,12 +10,23 @@ import {
 export class ProductionCostCategoriesService {
   constructor(private prisma: PrismaService) {}
 
-  /** activeOnly=true menyaring hanya kategori aktif (untuk dropdown pilihan). */
-  findAll(activeOnly = false) {
-    return this.prisma.productionCostCategory.findMany({
+  /** activeOnly=true menyaring hanya kategori aktif (untuk dropdown pilihan).
+   *  Melampirkan _count.productionCosts = jumlah biaya produksi yang memakai
+   *  nama kategori (ProductionCost.category masih berupa string). */
+  async findAll(activeOnly = false) {
+    const categories = await this.prisma.productionCostCategory.findMany({
       where: activeOnly ? { isActive: true } : undefined,
       orderBy: { name: 'asc' },
     });
+    const grouped = await this.prisma.productionCost.groupBy({
+      by: ['category'],
+      _count: { _all: true },
+    });
+    const countByName = new Map(grouped.map((g) => [g.category, g._count._all]));
+    return categories.map((c) => ({
+      ...c,
+      _count: { productionCosts: countByName.get(c.name) ?? 0 },
+    }));
   }
 
   async findOne(id: string) {
