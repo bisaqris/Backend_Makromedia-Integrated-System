@@ -110,9 +110,20 @@ export class ProjectsService {
   async update(id: string, dto: UpdateProjectDto) {
     const existing = await this.prisma.project.findUnique({
       where: { id },
-      select: { id: true, eventDate: true, startDate: true, endDate: true },
+      select: { id: true, status: true, eventDate: true, startDate: true, endDate: true },
     });
     if (!existing) throw new NotFoundException('Proyek tidak ditemukan.');
+
+    // Proyek final (COMPLETED/CANCELLED) terkunci: hanya boleh mengubah status
+    // (mis. membuka kembali ke ACTIVE). Edit field lain ditolak.
+    if (
+      (existing.status === StatusProyek.COMPLETED || existing.status === StatusProyek.CANCELLED) &&
+      Object.keys(dto).some((k) => k !== 'status')
+    ) {
+      throw new BadRequestException(
+        `Proyek berstatus ${existing.status} terkunci. Ubah status proyek kembali ke ACTIVE lebih dahulu untuk mengedit field lain.`,
+      );
+    }
 
     // Validasi memakai nilai efektif (gabungan payload baru + data tersimpan),
     // agar update parsial tetap menjaga urutan tanggal yang konsisten.

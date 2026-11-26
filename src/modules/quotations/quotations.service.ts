@@ -9,6 +9,7 @@ import {
   CompanyConfig, buildBillTo, buildIssuer, buildProjectInfo, mapDocumentItems,
 } from '../../common/documents/document-preview';
 import { getSkipTake, createPaginatedResponse } from '../../common/pagination/pagination.helper';
+import { assertProjectEditable } from '../../common/services/project-status.util';
 import { CreateQuotationDto, UpdateQuotationDto } from './dto/quotation.dto';
 import { QueryQuotationDto } from './dto/query-quotation.dto';
 
@@ -106,7 +107,8 @@ export class QuotationsService {
     };
   }
 
-  create(dto: CreateQuotationDto, user: AuthUser) {
+  async create(dto: CreateQuotationDto, user: AuthUser) {
+    await assertProjectEditable(this.prisma, dto.projectId);
     const items = dto.items.map((i) => ({
       ...i, frequency: i.frequency ?? 1,
       subTotal: new Prisma.Decimal(i.unitPrice).mul(i.quantity).mul(i.frequency ?? 1),
@@ -136,6 +138,7 @@ export class QuotationsService {
    */
   async update(id: string, dto: UpdateQuotationDto, _user: AuthUser) {
     const quotation = await this.findOne(id);
+    await assertProjectEditable(this.prisma, quotation.projectId);
     if (quotation.status !== StatusQuotation.DRAFT) {
       throw new BadRequestException('Hanya quotation berstatus DRAFT yang dapat diperbarui.');
     }
@@ -187,6 +190,7 @@ export class QuotationsService {
    */
   async updateStatus(id: string, status: StatusQuotation, user: AuthUser, note?: string) {
     const quotation = await this.findOne(id);
+    await assertProjectEditable(this.prisma, quotation.projectId);
 
     if (status !== StatusQuotation.APPROVED && status !== StatusQuotation.REJECTED) {
       throw new BadRequestException(

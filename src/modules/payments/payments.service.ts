@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { assertProjectEditable } from '../../common/services/project-status.util';
 import { CreatePaymentDto } from './dto/payment.dto';
 
 @Injectable()
@@ -9,6 +10,7 @@ export class PaymentsService {
 
   async create(projectId: string, dto: CreatePaymentDto) {
     await this.ensureProject(projectId);
+    await assertProjectEditable(this.prisma, projectId);
     return this.prisma.payment.create({
       data: {
         projectId,

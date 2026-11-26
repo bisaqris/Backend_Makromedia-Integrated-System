@@ -3,6 +3,7 @@ import { Prisma, StatusBiaya } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
 import { ProjectAccessService } from '../../common/services/project-access.service';
+import { assertProjectEditable } from '../../common/services/project-status.util';
 import {
   CreateProductionCostDto, UpdateProductionCostDto, RejectCostDto,
 } from './dto/production-cost.dto';
@@ -47,6 +48,7 @@ export class ProductionCostsService {
 
   async create(dto: CreateProductionCostDto, user: AuthUser) {
     await this.access.assertCanAccess(dto.projectId, user);
+    await assertProjectEditable(this.prisma, dto.projectId);
     // amount dihitung otomatis oleh trigger DB; diset juga di sini untuk konsistensi.
     const amount = new Prisma.Decimal(dto.unitPrice).mul(dto.quantity ?? 1).mul(dto.frequency ?? 1);
     return this.prisma.productionCost.create({
@@ -60,6 +62,7 @@ export class ProductionCostsService {
       throw new BadRequestException('Biaya yang sudah disetujui tidak dapat diubah.');
     }
     await this.access.assertCanAccess(cost.projectId, user);
+    await assertProjectEditable(this.prisma, cost.projectId);
     return this.prisma.productionCost.update({ where: { id }, data: dto });
   }
 
@@ -67,6 +70,7 @@ export class ProductionCostsService {
   async submit(id: string, user: AuthUser, note?: string) {
     const cost = await this.get(id);
     await this.access.assertCanAccess(cost.projectId, user);
+    await assertProjectEditable(this.prisma, cost.projectId);
     return this.prisma.productionCost.update({
       where: { id },
       data: {
@@ -79,7 +83,8 @@ export class ProductionCostsService {
 
   /** Direktur menyetujui (UC09). */
   async approve(id: string, director: AuthUser, note?: string) {
-    await this.get(id);
+    const cost = await this.get(id);
+    await assertProjectEditable(this.prisma, cost.projectId);
     return this.prisma.productionCost.update({
       where: { id },
       data: {
@@ -94,7 +99,8 @@ export class ProductionCostsService {
 
   /** Direktur menolak dengan catatan (UC09). */
   async reject(id: string, dto: RejectCostDto, director: AuthUser) {
-    await this.get(id);
+    const cost = await this.get(id);
+    await assertProjectEditable(this.prisma, cost.projectId);
     return this.prisma.productionCost.update({
       where: { id },
       data: {
@@ -110,6 +116,7 @@ export class ProductionCostsService {
   async remove(id: string, user: AuthUser) {
     const cost = await this.get(id);
     await this.access.assertCanAccess(cost.projectId, user);
+    await assertProjectEditable(this.prisma, cost.projectId);
     return this.prisma.productionCost.delete({ where: { id } });
   }
 

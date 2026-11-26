@@ -1,5 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { assertProjectEditable } from '../../common/services/project-status.util';
 
 @Injectable()
 export class ProjectMembersService {
@@ -16,6 +17,7 @@ export class ProjectMembersService {
 
   async add(projectId: string, userId: string) {
     await this.ensureProject(projectId);
+    await assertProjectEditable(this.prisma, projectId);
     const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
     if (!user) throw new NotFoundException('User tidak ditemukan.');
 
@@ -31,6 +33,7 @@ export class ProjectMembersService {
   }
 
   async remove(projectId: string, userId: string) {
+    await assertProjectEditable(this.prisma, projectId);
     const member = await this.prisma.projectMember.findUnique({
       where: { projectId_userId: { projectId, userId } },
     });

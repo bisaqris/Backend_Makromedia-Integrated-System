@@ -3,6 +3,7 @@ import { StatusProyek, StatusTask } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
 import { ProjectAccessService } from '../../common/services/project-access.service';
+import { assertProjectEditable } from '../../common/services/project-status.util';
 import { CreateTaskDto, UpdateTaskDto } from './dto/task.dto';
 
 @Injectable()
@@ -23,6 +24,7 @@ export class TasksService {
 
   async create(projectId: string, dto: CreateTaskDto, user: AuthUser) {
     await this.access.assertCanAccess(projectId, user);
+    await assertProjectEditable(this.prisma, projectId);
     await this.assertDueDateAfterProjectStart(projectId, dto.dueDate);
     return this.prisma.task.create({
       data: {
@@ -42,6 +44,7 @@ export class TasksService {
   async update(id: string, dto: UpdateTaskDto, user: AuthUser) {
     const task = await this.get(id);
     await this.access.assertCanAccess(task.projectId, user);
+    await assertProjectEditable(this.prisma, task.projectId);
     await this.assertDueDateAfterProjectStart(task.projectId, dto.dueDate);
     return this.prisma.task.update({
       where: { id },
@@ -60,6 +63,7 @@ export class TasksService {
   async updateProgress(id: string, progress: number, user: AuthUser) {
     const task = await this.get(id);
     await this.access.assertCanAccess(task.projectId, user);
+    await assertProjectEditable(this.prisma, task.projectId);
     const status =
       progress === 0 ? StatusTask.TODO : progress >= 100 ? StatusTask.DONE : StatusTask.IN_PROGRESS;
 
@@ -102,6 +106,7 @@ export class TasksService {
   async remove(id: string, user: AuthUser) {
     const task = await this.get(id);
     await this.access.assertCanAccess(task.projectId, user);
+    await assertProjectEditable(this.prisma, task.projectId);
     return this.prisma.task.delete({ where: { id } });
   }
 
