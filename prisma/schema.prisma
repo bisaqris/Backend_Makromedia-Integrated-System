@@ -565,3 +565,21 @@ model Payment {
   @@index([projectId], map: "idx_payment_project")
   @@map("payments")
 }
+
+// Pengaturan invoice global (singleton) - Terms & Condition, PPh, rekening, penanda tangan.
+// Dikelola di menu Setting (khusus DIREKTUR untuk ubah).
+model InvoiceSetting {
+  id                 String   @id @default(uuid()) @db.Uuid
+  pphPercent         Float    @default(0) @map("pph_percent")
+  termsOfCondition   String[] @map("terms_of_condition")
+  paymentInstruction String?  @map("payment_instruction")
+  bankAccounts       Json     @default("[]") @map("bank_accounts")
+  signerName         String?  @map("signer_name") @db.VarChar(160)
+  signerPosition     String?  @map("signer_position") @db.VarChar(160)
+  signerSignatureUrl String?  @map("signer_signature_url") @db.Text
+  signerUserId       String?  @map("signer_user_id") @db.Uuid
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("invoice_settings")
+}
