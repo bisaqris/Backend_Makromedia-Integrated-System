@@ -43,7 +43,7 @@ export class ManpowerService {
       orderBy: { [sortField]: order },
       skip,
       take,
-      include: { positionRef: true, skills: { include: { skill: true } } },
+      include: { positionRef: true, skills: { where: { skill: { isActive: true } }, include: { skill: true } } },
     });
 
     return createPaginatedResponse(data, total, query);
@@ -52,7 +52,7 @@ export class ManpowerService {
   async findOne(id: string) {
     const manpower = await this.prisma.manpower.findFirst({
       where: { id, deletedAt: null },
-      include: { positionRef: true, skills: { include: { skill: true } } },
+      include: { positionRef: true, skills: { where: { skill: { isActive: true } }, include: { skill: true } } },
     });
     if (!manpower) throw new NotFoundException('Manpower tidak ditemukan.');
     return manpower;

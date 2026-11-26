@@ -31,8 +31,12 @@ const safeUser = {
   bankName: true,
   bankAccountNo: true,
   accountHolder: true,
-  position: { select: { id: true, name: true } },
-  skills: { select: { skill: { select: { id: true, name: true } } } },
+  position: { select: { id: true, name: true, isActive: true } },
+  // Skill nonaktif disembunyikan dari profil (penugasan tetap tersimpan di DB).
+  skills: {
+    where: { skill: { isActive: true } },
+    select: { skill: { select: { id: true, name: true } } },
+  },
   createdAt: true,
 } satisfies Prisma.UserSelect;
 
